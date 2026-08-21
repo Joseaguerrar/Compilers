@@ -10,7 +10,7 @@ Token scanner(void)
 
     // Read input while characters are available
     while ((in_char = getchar()) != EOF) {
-        
+
         // Skip whitespace characters
         if (isspace(in_char))
         {
@@ -50,6 +50,29 @@ Token scanner(void)
 
         if (in_char == '+') {
             return PLUSOP;
+        }
+
+        // Check for minus operator or comment
+        if (in_char == '-') {
+            c = getchar();
+
+            // If another '-' follows, it is a comment
+            if (c == '-') {
+
+                // Ignore everything until newline or EOF
+                while ((c = getchar()) != '\n' && c != EOF) {
+                    // Skip comment characters
+                }
+
+                continue;
+            }
+
+            // It was only a minus operator
+            if (c != EOF) {
+                ungetc(c, stdin);
+            }
+
+            return MINUSOP;
         }
     }
     
