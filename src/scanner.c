@@ -20,38 +20,79 @@ Token scanner(void)
     return SCANEOF;
 }
 
-// Book code:
+// Book code Figure 2.3
 //
 // #include <stdio.h>
+// /* character classification macros */
 // #include <ctype.h>
 
-// int in_char, c;
+// extern char token_buffer[];
 
-// while ((in_char = getchar()) != EOF) {
-//     if (isspace(in_char))
-//         continue;       /* do nothing */
-//     else if (isalpha(in_char)) {
-//         /*
-//          * ID ::= LETTER | ID LETTER
-//          *               | ID DIGIT
-//          *               | ID UNDERSCORE
-//          */
-//         for (c = getchar(); isalnum(c) || c == '_';
-//                 c = getchar())
-//             ;
-//         ungetc(c, stdin);
+// token scanner(void)
+// {
+//     int in_char, c;
 
-//         return ID;
-//     } else if (isdigit(in_char)) {
-//         /*
-//          * INTLITERAL ::= DIGIT |
-//          *                INTLITERAL DIGIT
-//          */
-//         while (isdigit((c = getchar())))
-//             ;
-//         ungetc(c, stdin);
+//     clear_buffer();
+//     if (feof(stdin))
+//         return SCANEOF;
 
-//         return INTLITERAL;
-//     } else
-//         lexical_error(in_char);
+//     while ((in_char = getchar()) != EOF) {
+//         if (isspace(in_char))
+//             continue;    /* do nothing */
+//         else if (isalpha(in_char)) {
+//             /*
+//              * ID ::= LETTER | ID LETTER
+//              *               | ID DIGIT
+//              *               | ID UNDERSCORE
+//              */
+//             buffer_char(in_char);
+//             for (c = getchar(); isalnum(c) || c == '_';
+//                  c = getchar())
+//                 buffer_char(c);
+//             ungetc(c, stdin);
+//             return check_reserved();
+//         } else if (isdigit(in_char)) {
+//             /*
+//              * INTLITERAL ::= DIGIT |
+//              *                INTLITERAL DIGIT
+//              */
+//             buffer_char(in_char);
+//             for (c = getchar(); isdigit(c);
+//                  c = getchar())
+//                 buffer_char(c);
+//             ungetc(c, stdin);
+//             return INTLITERAL;
+//         } else if (in_char == '(')
+//             return LPAREN;
+//         else if (in_char == ')')
+//             return RPAREN;
+//         else if (in_char == ';')
+//             return SEMICOLON;
+//         else if (in_char == ',')
+//             return COMMA;
+//         else if (in_char == '+')
+//             return PLUSOP;
+//         else if (in_char == ':') {
+//             /* looking for ":=" */
+//             c = getchar();
+//             if (c == '=')
+//                 return ASSIGNOP;
+//             else {
+//                 ungetc(c, stdin);
+//                 lexical_error(in_char);
+//             }
+//         } else if (in_char == '-') {
+//             /* is it --, comment start */
+//             c = getchar();
+//             if (c == '-') {
+//                 do
+//                     in_char = getchar();
+//                 while (in_char != '\n');
+//             } else {
+//                 ungetc(c, stdin);
+//                 return MINUSOP;
+//             }
+//         } else
+//             lexical_error(in_char);
+//     }
 // }
