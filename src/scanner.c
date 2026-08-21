@@ -87,8 +87,6 @@ Token scanner(void)
             if (c != EOF) {
                 ungetc(c, stdin);
             }
-
-            // Por ahora después manejaremos el error léxico
         }
     }
     
