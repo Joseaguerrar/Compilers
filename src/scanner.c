@@ -88,6 +88,20 @@ Token scanner(void)
                 ungetc(c, stdin);
             }
         }
+
+        // Check if it is an identifier with following rule: LETTER { LETTER | DIGIT | _ }
+        if (isalpha(in_char)) {
+
+            while (isalnum(c = getchar()) || c == '_') {
+                // Continue reading identifier characters
+            }
+
+            if (c != EOF) {
+                ungetc(c, stdin);
+            }
+
+            return ID;
+        }
     }
     
     return SCANEOF;
