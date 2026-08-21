@@ -47,6 +47,10 @@ int main(void)
                 printf("SCANEOF\n");
                 break;
 
+            case ID:
+                printf("ID\n");
+                break;
+                
             default:
                 printf("UNKNOWN TOKEN\n");
                 break;
