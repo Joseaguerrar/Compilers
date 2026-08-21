@@ -35,12 +35,16 @@ int main(void)
                 printf("PLUSOP\n");
                 break;
 
-            case SCANEOF:
-                printf("SCANEOF\n");
-                break;
-                
             case MINUSOP:
                 printf("MINUSOP\n");
+                break;
+
+            case ASSIGNOP:
+                printf("ASSIGNOP\n");
+                break;
+
+            case SCANEOF:
+                printf("SCANEOF\n");
                 break;
 
             default:
