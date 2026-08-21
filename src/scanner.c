@@ -5,6 +5,7 @@
 
 Token scanner(void)
 {
+    //TODO: manage lexical errors
     int in_char;
     int c;
 
@@ -73,6 +74,21 @@ Token scanner(void)
             }
 
             return MINUSOP;
+        }
+
+        // Check for assignment operator
+        if (in_char == ':') {
+            c = getchar();
+
+            if (c == '=') {
+                return ASSIGNOP;
+            }
+
+            if (c != EOF) {
+                ungetc(c, stdin);
+            }
+
+            // Por ahora después manejaremos el error léxico
         }
     }
     
