@@ -6,83 +6,52 @@
 Token scanner(void)
 {
     int in_char;
+    int c;
 
     // Read input while characters are available
     while ((in_char = getchar()) != EOF) {
+        
         // Skip whitespace characters
         if (isspace(in_char))
         {
             continue;
         }
-       
+
+        // Check if it is digit
+        if (isdigit(in_char)) {
+
+            while (isdigit(c = getchar())) {
+                // Continue reading digits
+            }
+
+            if (c != EOF) {
+                ungetc(c, stdin); 
+            }
+
+            return INTLITERAL;
+        }
+
+        // Check single character tokens
+        if (in_char == '(') {
+            return LPAREN;
+        }
+
+        if (in_char == ')') {
+            return RPAREN;
+        }
+
+        if (in_char == ';') {
+            return SEMICOLON;
+        }
+
+        if (in_char == ',') {
+            return COMMA;
+        }
+
+        if (in_char == '+') {
+            return PLUSOP;
+        }
     }
     
     return SCANEOF;
 }
-
-// Book code Figure 2.3
-//
-// #include <stdio.h>
-// #include <ctype.h>
-
-// extern char token_buffer[];
-
-// token scanner(void) {
-//     int in_char, c;
-//     clear_buffer();
-//     if (feof(stdin))
-//         return SCANEOF;
-
-//     while ((in_char = getchar()) != EOF) {
-//         if (isspace(in_char))
-//             continue; /* Ignorar espacios y saltos de línea */
-//         else if (isalpha(in_char)) {
-//             /* ID ::= LETTER { LETTER | DIGIT | _ } */
-//             buffer_char(in_char);
-//             for (c = getchar(); isalnum(c) || c == '_'; c = getchar())
-//                 buffer_char(c);
-//             ungetc(c, stdin);
-//             return check_reserved();
-//         } else if (isdigit(in_char)) {
-//             /* INTLITERAL ::= DIGIT { DIGIT } */
-//             buffer_char(in_char);
-//             for (c = getchar(); isdigit(c); c = getchar())
-//                 buffer_char(c);
-//             ungetc(c, stdin);
-//             return INTLITERAL;
-//         } else if (in_char == '(') {
-//             return LPAREN;
-//         } else if (in_char == ')') {
-//             return RPAREN;
-//         } else if (in_char == ';') {
-//             return SEMICOLON;
-//         } else if (in_char == ',') {
-//             return COMMA;
-//         } else if (in_char == '+') {
-//             return PLUSOP;
-//         } else if (in_char == ':') {
-//             /* Buscar := */
-//             c = getchar();
-//             if (c == '=')
-//                 return ASSIGNOP;
-//             else {
-//                 ungetc(c, stdin);
-//                 lexical_error(in_char);
-//             }
-//         } else if (in_char == '-') {
-//             /* Buscar comentarios -- */
-//             c = getchar();
-//             if (c == '-') {
-//                 do {
-//                     in_char = getchar();
-//                 } while (in_char != '\n' && in_char != EOF);
-//             } else {
-//                 ungetc(c, stdin);
-//                 return MINUSOP;
-//             }
-//         } else {
-//             lexical_error(in_char);
-//         }
-//     }
-//     return SCANEOF;
-// }
