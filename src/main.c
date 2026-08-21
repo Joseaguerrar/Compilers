@@ -38,6 +38,10 @@ int main(void)
             case SCANEOF:
                 printf("SCANEOF\n");
                 break;
+                
+            case MINUSOP:
+                printf("MINUSOP\n");
+                break;
 
             default:
                 printf("UNKNOWN TOKEN\n");
