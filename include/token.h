@@ -1,7 +1,7 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
-typedef enum {
+typedef enum token_types{
     BEGIN,
     END,
     READ,
