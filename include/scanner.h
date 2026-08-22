@@ -3,6 +3,7 @@
 
 #include "token.h"
 
+// Scans the input and returns token type.
 Token scanner(void);
 
 #endif

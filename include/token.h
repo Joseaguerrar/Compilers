@@ -1,6 +1,7 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
+// Token types for the Micro language
 typedef enum token_types{
     BEGIN,
     END,
