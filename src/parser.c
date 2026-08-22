@@ -13,9 +13,10 @@ static void syntax_error(Token token);
 // Declarations for parsing functions
 static void program(void);
 static void statement_list(void);
-static void statement_list(void);
 static void statement(void);
 static void expression(void);
+static void primary(void);
+static void add_op(void);
 static void id_list(void);
 static void expr_list(void);
 
@@ -114,5 +115,16 @@ static void statement(void)
         default:
             syntax_error(tok);
             break;
+    }
+}
+
+// Parses a comma separated list of identifiers.
+static void id_list(void)
+{
+    match(ID);
+
+    while (next_token() == COMMA) {
+        match(COMMA);
+        match(ID);
     }
 }
