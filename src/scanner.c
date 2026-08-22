@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "scanner.h"
 
@@ -23,6 +24,21 @@ void buffer_char(int c)
     }
 }
 
+static Token check_reserved(void)
+{
+    if (strcmp(token_buffer, "BEGIN") == 0) {
+        return BEGIN;
+    } else if (strcmp(token_buffer, "END") == 0) {
+        return END;
+    } else if (strcmp(token_buffer, "READ") == 0) {
+        return READ;
+    } else if (strcmp(token_buffer, "WRITE") == 0) {
+        return WRITE;
+    }
+
+    return ID; // Not a reserved word, treat as identifier
+}
+
 Token scanner(void)
 {
     //TODO: manage lexical errors
@@ -31,7 +47,7 @@ Token scanner(void)
 
     // Clear the token buffer before reading a new token
     clear_buffer();
-    
+
     // Read input while characters are available
     while ((in_char = getchar()) != EOF) {
 
@@ -127,7 +143,7 @@ Token scanner(void)
                 ungetc(c, stdin);
             }
 
-            return ID;
+            return check_reserved();
         }
     }
     
