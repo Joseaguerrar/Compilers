@@ -128,3 +128,16 @@ static void id_list(void)
         match(ID);
     }
 }
+
+// Parses an expression containing primary values and addition or subtraction operators.
+static void expression(void)
+{
+    Token tok;
+
+    primary();
+
+    while ((tok = next_token()) == PLUSOP || tok == MINUSOP) {
+        add_op();
+        primary();
+    }
+}
