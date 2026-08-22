@@ -9,12 +9,14 @@
 char token_buffer[BUFFER_SIZE];
 static int buffer_index = 0;
 
+// Clear the token_buffer and reset the buffer_index
 void clear_buffer(void)
 {
     buffer_index = 0;
     token_buffer[0] = '\0';
 }
 
+// Add a character to the token_buffer and update the buffer_index
 void buffer_char(int c)
 {
     if (buffer_index < BUFFER_SIZE - 1) {
@@ -24,24 +26,30 @@ void buffer_char(int c)
     }
 }
 
+// Check if the token_buffer contains a reserved word and return the corresponding token type
 static Token check_reserved(void)
 {
-    if (strcmp(token_buffer, "BEGIN") == 0) {
+    if (strcmp(token_buffer, "begin") == 0) {
         return BEGIN;
-    } else if (strcmp(token_buffer, "END") == 0) {
+    } else if (strcmp(token_buffer, "end") == 0) {
         return END;
-    } else if (strcmp(token_buffer, "READ") == 0) {
+    } else if (strcmp(token_buffer, "read") == 0) {
         return READ;
-    } else if (strcmp(token_buffer, "WRITE") == 0) {
+    } else if (strcmp(token_buffer, "write") == 0) {
         return WRITE;
     }
 
     return ID; // Not a reserved word, treat as identifier
 }
 
+// Handle lexical errors by printing an error message to stderr
+static void lexical_error(int c)
+{
+    fprintf(stderr, "Lexical error: invalid character '%c'\n", c);
+}
+
 Token scanner(void)
 {
-    //TODO: manage lexical errors
     int in_char;
     int c;
 
@@ -128,6 +136,9 @@ Token scanner(void)
             if (c != EOF) {
                 ungetc(c, stdin);
             }
+
+            lexical_error(in_char);
+            continue;
         }
 
         // Check if it is an identifier with following rule: LETTER { LETTER | DIGIT | _ }
@@ -144,6 +155,10 @@ Token scanner(void)
             }
 
             return check_reserved();
+        }
+
+        else {
+            lexical_error(in_char);
         }
     }
     
