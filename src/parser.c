@@ -6,9 +6,11 @@
 static Token lookahead;
 static int has_lookahead = 0;
 
+static const char *token_name(Token token);
+//
 static Token next_token(void);
 static void match(Token expected);
-static void syntax_error(Token token);
+static void syntax_error(Token expected, Token actual);
 
 // Declarations for parsing functions
 static void program(void);
@@ -39,14 +41,39 @@ static void match(Token expected)
     if (actual == expected) {
         has_lookahead = 0;
     } else {
-        syntax_error(actual);
+        syntax_error(expected, actual);
     }
 }
 
 // Reports an unexpected token as a syntax error.
-static void syntax_error(Token token)
+static void syntax_error(Token expected, Token actual)
 {
-    fprintf(stderr, "Syntax error: unexpected token %d\n", token);
+    fprintf(stderr,
+            "Syntax error: expected token %s, but found %s\n",
+            token_name(expected),
+            token_name(actual));
+}
+
+// Returns the readable name of a token for when a syntax error occurs..
+static const char *token_name(Token token)
+{
+    switch (token) {
+        case BEGIN:      return "BEGIN";
+        case END:        return "END";
+        case READ:       return "READ";
+        case WRITE:      return "WRITE";
+        case ID:         return "ID";
+        case INTLITERAL: return "INTLITERAL";
+        case LPAREN:     return "LPAREN";
+        case RPAREN:     return "RPAREN";
+        case SEMICOLON:  return "SEMICOLON";
+        case COMMA:      return "COMMA";
+        case ASSIGNOP:   return "ASSIGNOP";
+        case PLUSOP:     return "PLUSOP";
+        case MINUSOP:    return "MINUSOP";
+        case SCANEOF:    return "SCANEOF";
+        default:         return "UNKNOWN";
+    }
 }
 
 // Parses the complete input and verifies the end of file.
@@ -113,7 +140,9 @@ static void statement(void)
             break;
 
         default:
-            syntax_error(tok);
+            fprintf(stderr,
+                    "Syntax error: expected ID, READ or WRITE, found %s\n",
+                    token_name(tok));
             break;
     }
 }
@@ -152,7 +181,9 @@ static void add_op(void)
     } else if (tok == MINUSOP) {
         match(MINUSOP);
     } else {
-        syntax_error(tok);
+        fprintf(stderr,
+                "Syntax error: expected PLUSOP or MINUSOP, found %s\n",
+                token_name(tok));
     }
 }
 
@@ -177,7 +208,20 @@ static void primary(void)
             break;
 
         default:
-            syntax_error(tok);
+            fprintf(stderr,
+                    "Syntax error: expected ID, INTLITERAL or LPAREN, found %s\n",
+                    token_name(tok));
             break;
     }
-} 
+}
+
+// Parses a comma separated list of expressions.
+static void expr_list(void)
+{
+    expression();
+
+    while (next_token() == COMMA) {
+        match(COMMA);
+        expression();
+    }
+}
