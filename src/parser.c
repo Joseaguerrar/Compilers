@@ -134,10 +134,50 @@ static void expression(void)
 {
     Token tok;
 
-    primary();
+    primary();  
 
     while ((tok = next_token()) == PLUSOP || tok == MINUSOP) {
         add_op();
         primary();
     }
 }
+
+// Parses an addition or subtraction operator.
+static void add_op(void)
+{
+    Token tok = next_token();
+
+    if (tok == PLUSOP) {
+        match(PLUSOP);
+    } else if (tok == MINUSOP) {
+        match(MINUSOP);
+    } else {
+        syntax_error(tok);
+    }
+}
+
+// Parses an identifier, integer literal, or parenthesized expression.
+static void primary(void)
+{
+    Token tok = next_token();
+
+    switch (tok) {
+        case ID:
+            match(ID);
+            break;
+
+        case INTLITERAL:
+            match(INTLITERAL);
+            break;
+
+        case LPAREN:
+            match(LPAREN);
+            expression();
+            match(RPAREN);
+            break;
+
+        default:
+            syntax_error(tok);
+            break;
+    }
+} 
