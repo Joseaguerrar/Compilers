@@ -10,9 +10,14 @@ static Token next_token(void);
 static void match(Token expected);
 static void syntax_error(Token token);
 
-// Forward declarations for parsing functions
+// Declarations for parsing functions
 static void program(void);
 static void statement_list(void);
+static void statement_list(void);
+static void statement(void);
+static void expression(void);
+static void id_list(void);
+static void expr_list(void);
 
 // Returns the next token without consuming it.
 static Token next_token(void)
@@ -56,4 +61,58 @@ static void program(void)
     match(BEGIN);
     statement_list();
     match(END);
+}
+
+// Parses one or more Micro statements.
+static void statement_list(void)
+{
+    statement();
+
+    while (1) {
+        switch (next_token()) {
+            case ID:
+            case READ:
+            case WRITE:
+                statement();
+                break;
+
+            default:
+                return;
+        }
+    }
+}
+
+// Parses a Micro statement based on its first token.
+static void statement(void)
+{
+    Token tok = next_token();
+
+    switch (tok) {
+        case ID:
+            match(ID);
+            match(ASSIGNOP);
+            expression();
+            match(SEMICOLON);
+            break;
+
+        case READ:
+            match(READ);
+            match(LPAREN);
+            id_list();
+            match(RPAREN);
+            match(SEMICOLON);
+            break;
+
+        case WRITE:
+            match(WRITE);
+            match(LPAREN);
+            expr_list();
+            match(RPAREN);
+            match(SEMICOLON);
+            break;
+
+        default:
+            syntax_error(tok);
+            break;
+    }
 }
