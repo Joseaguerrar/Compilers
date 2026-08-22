@@ -2,6 +2,8 @@
 
 #include "scanner.h"
 
+extern char token_buffer[];
+
 int main(void)
 {
     Token token;
@@ -11,8 +13,28 @@ int main(void)
 
         switch (token) {
 
+            case BEGIN:
+                printf("BEGIN\n");
+                break;
+
+            case END:
+                printf("END\n");
+                break;
+
+            case READ:
+                printf("READ\n");
+                break;
+
+            case WRITE:
+                printf("WRITE\n");
+                break;
+
+            case ID:
+                printf("ID: %s\n", token_buffer);
+                break;
+
             case INTLITERAL:
-                printf("INTLITERAL\n");
+                printf("INTLITERAL: %s\n", token_buffer);
                 break;
 
             case LPAREN:
@@ -31,6 +53,10 @@ int main(void)
                 printf("COMMA\n");
                 break;
 
+            case ASSIGNOP:
+                printf("ASSIGNOP\n");
+                break;
+
             case PLUSOP:
                 printf("PLUSOP\n");
                 break;
@@ -39,20 +65,8 @@ int main(void)
                 printf("MINUSOP\n");
                 break;
 
-            case ASSIGNOP:
-                printf("ASSIGNOP\n");
-                break;
-
             case SCANEOF:
                 printf("SCANEOF\n");
-                break;
-
-            case ID:
-                printf("ID\n");
-                break;
-                
-            default:
-                printf("UNKNOWN TOKEN\n");
                 break;
         }
 
