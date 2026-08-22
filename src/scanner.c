@@ -3,12 +3,35 @@
 
 #include "scanner.h"
 
+#define BUFFER_SIZE 33
+
+char token_buffer[BUFFER_SIZE];
+static int buffer_index = 0;
+
+void clear_buffer(void)
+{
+    buffer_index = 0;
+    token_buffer[0] = '\0';
+}
+
+void buffer_char(int c)
+{
+    if (buffer_index < BUFFER_SIZE - 1) {
+        token_buffer[buffer_index] = (char)c;
+        buffer_index++;
+        token_buffer[buffer_index] = '\0';
+    }
+}
+
 Token scanner(void)
 {
     //TODO: manage lexical errors
     int in_char;
     int c;
 
+    // Clear the token buffer before reading a new token
+    clear_buffer();
+    
     // Read input while characters are available
     while ((in_char = getchar()) != EOF) {
 
@@ -21,8 +44,10 @@ Token scanner(void)
         // Check if it is digit
         if (isdigit(in_char)) {
 
+            buffer_char(in_char);
+
             while (isdigit(c = getchar())) {
-                // Continue reading digits
+                buffer_char(c);
             }
 
             if (c != EOF) {
@@ -92,8 +117,10 @@ Token scanner(void)
         // Check if it is an identifier with following rule: LETTER { LETTER | DIGIT | _ }
         if (isalpha(in_char)) {
 
+            buffer_char(in_char);
+
             while (isalnum(c = getchar()) || c == '_') {
-                // Continue reading identifier characters
+                buffer_char(c);
             }
 
             if (c != EOF) {
