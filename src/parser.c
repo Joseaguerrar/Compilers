@@ -42,3 +42,18 @@ static void syntax_error(Token token)
 {
     fprintf(stderr, "Syntax error: unexpected token %d\n", token);
 }
+
+// Parses the complete input and verifies the end of file.
+void system_goal(void)
+{
+    program();
+    match(SCANEOF);
+}
+
+// Parses a Micro program enclosed by begin and end.
+static void program(void)
+{
+    match(BEGIN);
+    statement_list();
+    match(END);
+}
