@@ -27,6 +27,19 @@ static char *get_temp(void)
     return tempname;
 }
 
+// Extracts the string representation of an expression record.
+static char *extract(expr_rec source)
+{
+    static char buffer[MAXIDLEN];
+
+    if (source.kind == LITERALEXPR) {
+        sprintf(buffer, "%d", source.val);
+        return buffer;
+    }
+
+    return source.name;
+}
+
 // Initializes semantic processing.
 void start(void)
 {
@@ -36,4 +49,10 @@ void start(void)
 void finish(void)
 {
     generate("Halt", "", "", "");
+}
+
+// Generates code for an assignment.
+void assign(expr_rec target, expr_rec source)
+{
+    generate("Store", extract(source), target.name, "");
 }
