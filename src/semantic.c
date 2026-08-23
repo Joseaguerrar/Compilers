@@ -1,11 +1,14 @@
 // FROM BOOK pages 43, 45
 
 #include <stdio.h>
+#include <string.h>
 
 #include "semantic.h"
 #include "symbol_table.h"
 #include "codegen.h"
 #include "parser.h"
+
+static const char *extract_op(op_rec op);
 
 // Declares an identifier if it is not already in the symbol table.
 static void check_id(string s)
@@ -42,6 +45,16 @@ static char *extract(expr_rec source)
     return source.name;
 }
 
+// Extracts the target opcode from an operator record.
+static const char *extract_op(op_rec op)
+{
+    if (op.operator == PLUS) {
+        return "Add";
+    }
+
+    return "Sub";
+}
+
 // Initializes semantic processing.
 void start(void)
 {
@@ -71,4 +84,22 @@ op_rec process_op(void)
     }
 
     return o;
+}
+
+// Generates code for an infix expression and returns its temporary result.
+expr_rec gen_infix(expr_rec e1, op_rec op, expr_rec e2)
+{
+    expr_rec e_rec;
+    string left;
+    string right;
+
+    e_rec.kind = TEMPEXPR;
+    strcpy(e_rec.name, get_temp());
+
+    strcpy(left, extract(e1));
+    strcpy(right, extract(e2));
+
+    generate(extract_op(op), left, right, e_rec.name);
+
+    return e_rec;
 }
