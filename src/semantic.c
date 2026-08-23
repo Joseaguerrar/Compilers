@@ -26,3 +26,14 @@ static char *get_temp(void)
 
     return tempname;
 }
+
+// Initializes semantic processing.
+void start(void)
+{
+}
+
+// Generates code to finish the target program.
+void finish(void)
+{
+    generate("Halt", "", "", "");
+}
