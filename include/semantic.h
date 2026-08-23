@@ -24,4 +24,6 @@ typedef struct expression {
 void start(void);
 void finish(void);
 
+void assign(expr_rec target, expr_rec source);
+
 #endif
