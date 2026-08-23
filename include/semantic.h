@@ -21,4 +21,6 @@ typedef struct expression {
     
 } expr_rec;
 
+void check_id(string s);
+
 #endif
