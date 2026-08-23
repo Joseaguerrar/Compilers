@@ -26,4 +26,6 @@ void finish(void);
 
 void assign(expr_rec target, expr_rec source);
 
+op_rec process_op(void);
+
 #endif
