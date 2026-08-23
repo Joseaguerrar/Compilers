@@ -3,8 +3,8 @@
 #include "parser.h"
 #include "scanner.h"
 
-static Token lookahead;
-static int has_lookahead = 0;
+Token lookahead;
+int has_lookahead = 0;
 
 static const char *token_name(Token token);
 //
@@ -23,14 +23,14 @@ static void id_list(void);
 static void expr_list(void);
 
 // Returns the next token without consuming it.
-static Token next_token(void)
+Token next_token(void)
 {
     if (!has_lookahead) {
-        lookahead = scanner();
+        current_token = scanner();
         has_lookahead = 1;
     }
 
-    return lookahead;
+    return current_token;
 }
 
 // Checks and consumes the expected token.
