@@ -1,9 +1,11 @@
 // FROM BOOK pages 43, 45
 
 #include <stdio.h>
+
 #include "semantic.h"
 #include "symbol_table.h"
 #include "codegen.h"
+#include "parser.h"
 
 // Declares an identifier if it is not already in the symbol table.
 static void check_id(string s)
@@ -55,4 +57,18 @@ void finish(void)
 void assign(expr_rec target, expr_rec source)
 {
     generate("Store", extract(source), target.name, "");
+}
+
+// Produces an operator semantic record.
+op_rec process_op(void)
+{
+    op_rec o;
+
+    if (current_token == PLUSOP) {
+        o.operator = PLUS;
+    } else {
+        o.operator = MINUS;
+    }
+
+    return o;
 }
