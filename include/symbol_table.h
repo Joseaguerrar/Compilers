@@ -4,9 +4,9 @@
 #include "semantic.h"
 
 // Checks whether a name is already in the symbol table.
-int lookup(string s);
+extern int lookup(string s);
 
 // Adds a name to the symbol table.
-void enter(string s);
+extern void enter(string s);
 
 #endif
