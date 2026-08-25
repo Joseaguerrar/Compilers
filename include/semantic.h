@@ -22,6 +22,7 @@ typedef struct expression {
 } expr_rec;
 
 void start(void);
+
 void finish(void);
 
 void assign(expr_rec target, expr_rec source);
@@ -32,4 +33,9 @@ expr_rec gen_infix(expr_rec e1, op_rec op, expr_rec e2);
 
 void read_id(expr_rec in_var);
 
+expr_rec process_id(void);
+
+expr_rec process_literal(void);
+
+void write_expr(expr_rec out_expr);
 #endif
