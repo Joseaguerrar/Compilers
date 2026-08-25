@@ -123,3 +123,14 @@ expr_rec process_id(void)
 
     return t;
 }
+
+// Builds a semantic record for an integer literal.
+expr_rec process_literal(void)
+{
+    expr_rec t;
+
+    t.kind = LITERALEXPR;
+    (void) sscanf(token_buffer, "%d", &t.val);
+
+    return t;
+}
