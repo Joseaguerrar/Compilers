@@ -134,3 +134,9 @@ expr_rec process_literal(void)
 
     return t;
 }
+
+// Generates code for writing an expression.
+void write_expr(expr_rec out_expr)
+{
+    generate("Write", extract(out_expr), "Integer", "");
+}
