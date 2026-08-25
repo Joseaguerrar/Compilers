@@ -7,6 +7,7 @@
 #include "symbol_table.h"
 #include "codegen.h"
 #include "parser.h"
+#include "scanner.h"
 
 static const char *extract_op(op_rec op);
 
@@ -108,4 +109,17 @@ expr_rec gen_infix(expr_rec e1, op_rec op, expr_rec e2)
 void read_id(expr_rec in_var)
 {
     generate("Read", in_var.name, "Integer", "");
+}
+
+// Builds a semantic record for an identifier.
+expr_rec process_id(void)
+{
+    expr_rec t;
+
+    check_id(token_buffer);
+
+    t.kind = IDEXPR;
+    strcpy(t.name, token_buffer);
+
+    return t;
 }
