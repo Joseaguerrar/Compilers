@@ -6,7 +6,7 @@
 
 #define BUFFER_SIZE 33
 
-extern char token_buffer[BUFFER_SIZE];
+char token_buffer[BUFFER_SIZE];
 static int buffer_index = 0;
 
 // Clear the token_buffer and reset the buffer_index
