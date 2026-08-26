@@ -2,9 +2,10 @@
 
 #include "parser.h"
 #include "scanner.h"
+#include "semantic.h"
 
-Token lookahead;
-int has_lookahead = 0;
+Token current_token;
+static int has_lookahead = 0;
 
 static const char *token_name(Token token);
 //
@@ -22,8 +23,10 @@ static void add_op(void);
 static void id_list(void);
 static void expr_list(void);
 
+static expr_rec ident(void);
+
 // Returns the next token without consuming it.
-Token next_token(void)
+static Token next_token(void)
 {
     if (!has_lookahead) {
         current_token = scanner();
