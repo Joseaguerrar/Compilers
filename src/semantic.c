@@ -60,17 +60,21 @@ static const char *extract_op(op_rec op)
 // Initializes semantic processing.
 void start(void)
 {
+    //CALL THE START CODE GEN ON codegen.c
 }
 
 // Generates code to finish the target program.
 void finish(void)
 {
+    //CALL THE FINISH CODE GEN ON codegen.c
+    //CALL THE DUMP SYMBOL TABLE ON symbol_table.c
     generate("Halt", "", "", "");
 }
 
 // Generates code for an assignment.
 void assign(expr_rec target, expr_rec source)
 {
+    //CALL THE ASSIGN CODE GEN ON codegen.c
     generate("Store", extract(source), target.name, "");
 }
 
@@ -109,6 +113,7 @@ expr_rec gen_infix(expr_rec e1, op_rec op, expr_rec e2)
 // Generates code for reading an identifier.
 void read_id(expr_rec in_var)
 {
+    //CALL THE READ CODE GEN ON codegen.c
     generate("Read", in_var.name, "Integer", "");
 }
 
@@ -139,5 +144,6 @@ expr_rec process_literal(void)
 // Generates code for writing an expression.
 void write_expr(expr_rec out_expr)
 {
+    //CALL THE WRITE CODE GEN ON codegen.c
     generate("Write", extract(out_expr), "Integer", "");
 }

@@ -26,25 +26,25 @@ void generate(const char *op_code,
 }
 
 
-// START FUNCTION
-// void gen_start(FILE *out) {
-//     fprintf(out, ".intel_syntax noprefix\n");
-//     fprintf(out, ".global main\n");
-//     fprintf(out, ".extern printf, scanf\n\n");
+// Start function x86-64
+void gen_start(FILE *out) {
+    fprintf(out, ".intel_syntax noprefix\n");
+    fprintf(out, ".global main\n");
+    fprintf(out, ".extern printf, scanf\n\n");
     
-//     /* Strings format I/O */
-//     fprintf(out, ".section .rodata\n");
-//     fprintf(out, "fmt_read:  .string \"%%d\"\n");
-//     fprintf(out, "fmt_write: .string \"%%d\\n\"\n\n");
+    /* Strings format I/O */
+    fprintf(out, ".section .rodata\n");
+    fprintf(out, "fmt_read:  .string \"%%d\"\n");
+    fprintf(out, "fmt_write: .string \"%%d\\n\"\n\n");
 
-//     /* Start (main) */
-//     fprintf(out, ".section .text\n");
-//     fprintf(out, "main:\n");
-//     fprintf(out, "    push rbp\n");
-//     fprintf(out, "    mov rbp, rsp\n");
-// }
+    /* Start (main) */
+    fprintf(out, ".section .text\n");
+    fprintf(out, "main:\n");
+    fprintf(out, "    push rbp\n");
+    fprintf(out, "    mov rbp, rsp\n");
+}
 
-// FINISH FUNCTION
+// Finish function x86-64
 // void gen_finish(FILE *out) {
  
 //     fprintf(out, "    mov eax, 0\n");
