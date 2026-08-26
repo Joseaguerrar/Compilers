@@ -17,9 +17,9 @@ static void syntax_error(Token expected, Token actual);
 static void program(void);
 static void statement_list(void);
 static void statement(void);
-static void expression(void);
-static void primary(void);
-static void add_op(void);
+static expr_rec expression(void);
+static expr_rec primary(void);
+static op_rec add_op(void);
 static void id_list(void);
 static void expr_list(void);
 
@@ -161,21 +161,27 @@ static void id_list(void)
     }
 }
 
-// Parses an expression containing primary values and addition or subtraction operators.
-static void expression(void)
+// Parses an expression and returns its semantic record.
+static expr_rec expression(void)
 {
+    expr_rec left;
+    expr_rec right;
+    op_rec op;
     Token tok;
 
-    primary();  
+    left = primary();
 
     while ((tok = next_token()) == PLUSOP || tok == MINUSOP) {
-        add_op();
-        primary();
+        op = add_op();
+        right = primary();
+        left = gen_infix(left, op, right);
     }
+
+    return left;
 }
 
-// Parses an addition or subtraction operator.
-static void add_op(void)
+// Parses an addition or subtraction operator and returns its semantic record.
+static op_rec add_op(void)
 {
     Token tok = next_token();
 
@@ -188,25 +194,28 @@ static void add_op(void)
                 "Syntax error: expected PLUSOP or MINUSOP, found %s\n",
                 token_name(tok));
     }
+
+    return process_op();
 }
 
 // Parses an identifier, integer literal, or parenthesized expression.
-static void primary(void)
+static expr_rec primary(void)
 {
     Token tok = next_token();
-
+    expr_rec result;
     switch (tok) {
         case ID:
-            match(ID);
+            return ident();
             break;
 
         case INTLITERAL:
             match(INTLITERAL);
+            result = process_literal();
             break;
 
         case LPAREN:
             match(LPAREN);
-            expression();
+            result = expression();
             match(RPAREN);
             break;
 
@@ -216,6 +225,8 @@ static void primary(void)
                     token_name(tok));
             break;
     }
+
+    return result;
 }
 
 // Parses a comma separated list of expressions.
