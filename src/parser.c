@@ -84,11 +84,13 @@ void system_goal(void)
 {
     program();
     match(SCANEOF);
+    finish();
 }
 
 // Parses a Micro program enclosed by begin and end.
 static void program(void)
 {
+    start();
     match(BEGIN);
     statement_list();
     match(END);
