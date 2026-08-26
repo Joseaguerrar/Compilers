@@ -40,10 +40,11 @@ static char *extract(expr_rec source)
 
     if (source.kind == LITERALEXPR) {
         sprintf(buffer, "%d", source.val);
-        return buffer;
+    } else {
+        strcpy(buffer, source.name);
     }
 
-    return source.name;
+    return buffer;
 }
 
 // Extracts the target opcode from an operator record.
