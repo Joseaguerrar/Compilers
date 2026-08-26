@@ -23,7 +23,7 @@ static op_rec add_op(void);
 static void id_list(void);
 static void expr_list(void);
 
-static expr_rec ident(void);
+static expr_rec identifier(void);
 
 // Returns the next token without consuming it.
 static Token next_token(void)
@@ -123,7 +123,7 @@ static void statement(void)
             expr_rec target;
             expr_rec source;
 
-            target = ident();
+            target = identifier();
             match(ASSIGNOP);
             source = expression();
             assign(target, source);
@@ -154,14 +154,18 @@ static void statement(void)
     }
 }
 
-// Parses a comma separated list of identifiers.
+// Parses a comma separated list of identifiers and generates read operations.
 static void id_list(void)
 {
-    match(ID);
+    expr_rec id;
+
+    id = identifier();
+    read_id(id);
 
     while (next_token() == COMMA) {
         match(COMMA);
-        match(ID);
+        id = identifier();
+        read_id(id);
     }
 }
 
@@ -209,7 +213,7 @@ static expr_rec primary(void)
     expr_rec result;
     switch (tok) {
         case ID:
-            return ident();
+            return identifier();
             break;
 
         case INTLITERAL:
@@ -245,7 +249,7 @@ static void expr_list(void)
 }
 
 // Parses an identifier and returns its semantic record.
-static expr_rec ident(void)
+static expr_rec identifier(void)
 {
     match(ID);
     return process_id();
