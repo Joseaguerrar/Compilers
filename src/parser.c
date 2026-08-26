@@ -119,13 +119,17 @@ static void statement(void)
     Token tok = next_token();
 
     switch (tok) {
-        case ID:
-            match(ID);
+        case ID: {
+            expr_rec target;
+            expr_rec source;
+
+            target = ident();
             match(ASSIGNOP);
-            expression();
+            source = expression();
+            assign(target, source);
             match(SEMICOLON);
             break;
-
+        }
         case READ:
             match(READ);
             match(LPAREN);
