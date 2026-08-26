@@ -237,14 +237,18 @@ static expr_rec primary(void)
     return result;
 }
 
-// Parses a comma separated list of expressions.
+// Parses a comma separated list of expressions and generates write operations.
 static void expr_list(void)
 {
-    expression();
+    expr_rec expr;
+
+    expr = expression();
+    write_expr(expr);
 
     while (next_token() == COMMA) {
         match(COMMA);
-        expression();
+        expr = expression();
+        write_expr(expr);
     }
 }
 
