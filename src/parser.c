@@ -228,3 +228,10 @@ static void expr_list(void)
         expression();
     }
 }
+
+// Parses an identifier and returns its semantic record.
+static expr_rec ident(void)
+{
+    match(ID);
+    return process_id();
+}
