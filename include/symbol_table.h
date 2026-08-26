@@ -9,4 +9,7 @@ extern int lookup(string s);
 // Adds a name to the symbol table.
 extern void enter(string s);
 
+// Prints then symbol table
+void dump_symbol_table()
+
 #endif

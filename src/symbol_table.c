@@ -27,3 +27,8 @@ void enter(string s)
         symbol_count++;
     }
 }
+
+void symbol_table()
+{
+    
+}
