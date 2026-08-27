@@ -1,6 +1,8 @@
 #include <stdio.h>
 
 #include "parser.h"
+#include "compile_helper.h"
+#include "execute_helper.h"
 
 // Opens the Micro source file and starts the compilation.
 int main(int argc, char *argv[])
@@ -10,17 +12,29 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Handle error opening the file
     if (freopen(argv[1], "r", stdin) == NULL) {
         perror("Error opening source file");
         return 1;
     }
 
-    // Gen the .s file 
+    // Handle error creating the ".s" file, all the stdout will go to the ".s" file
+    if (freopen("program_mostro.s", "w", stdout) == NULL) {
+        perror("Error creating output '.s' file");
+        return 1;
+    }
 
+    // Execute our compiler
     system_goal();
 
-    // We must use gcc (system() on linux) to assembly and link the executable
+    // Make sure all the buffer on c to be writed on the file
+    fflush(stdout);
 
-    // Then we have to use system() to execute the x86 file
+    // Use the compile helper to get the executable file
+    compile_program("program_mostro.s");
+
+    // Use the execute helper to run the program
+    execute_program("program_mostro_binary");
+
     return 0;
 }

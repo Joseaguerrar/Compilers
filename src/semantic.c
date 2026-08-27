@@ -11,14 +11,12 @@
 
 static const char *extract_op(op_rec op);
 
-// extern FILE *out_file; // Missing pointer to the .s file?
-
 // Declares an identifier if it is not already in the symbol table.
 static void check_id(string s)
 {
     if (!lookup(s)) {
         enter(s);
-        generate("Declare", s, "Integer", "");
+        // generate("Declare", s, "Integer", "");
     }
 }
 
@@ -125,7 +123,7 @@ expr_rec gen_infix(expr_rec e1, op_rec op, expr_rec e2)
 // Generates code for reading an identifier.
 void read_id(expr_rec in_var)
 {
-    gen_read(); // codegen.c
+    // gen_read(stdout, in_var.name); // codegen.c
 }
 
 // Builds a semantic record for an identifier.
