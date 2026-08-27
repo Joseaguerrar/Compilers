@@ -9,7 +9,7 @@ int execute_program(const char *binary_filename)
     char command[512];
 
     // used snprintf instead of sprintf (it's safer) to build a solid command to pass to the system()
-    snprintf(command, sizeof(command), "/.%s", binary_filename);
+    snprintf(command, sizeof(command), "./%s", binary_filename);
 
     // execute the command defined above, on a very safe way :D 
     int result = system(command);
