@@ -73,7 +73,7 @@ void finish(void)
 // Generates code for an assignment.
 void assign(expr_rec target, expr_rec source)
 {
-    // gen_assign(stdout, target.name, source); // codegen.c
+    gen_assign(stdout, target.name, source); // codegen.c
 }
 
 // Produces an operator semantic record.
@@ -90,32 +90,25 @@ op_rec process_op(void)
     return o;
 }
 
-// Generates code for an infix expression and returns its temporary result.
+// Generates code for an infix expression and returns its temporary result, or detects if the operation can be solved during compiling
 expr_rec gen_infix(expr_rec e1, op_rec op, expr_rec e2)
 {
-    expr_rec e_rec;
-    string left;
-    string right;
+    // op = ["-" or "+"]
+    // e1.kind = [IDEXPR -> Variables, LITERALEXPR -> constant numbers, TEMPEXPR -> intermediate results]
+    expr_rec e_rec; // Expression Record
 
+    // Constant folding Exercise 8, avoid generate extra code
+    // If e1 and e2 constants, return the result, not create the assembly code for that
+    if (e1.kind == LITERALEXPR && e2.kind == LITERALEXPR) {
+        e_rec.kind = LITERALEXPR;
+        e_rec.val = (op.operator == PLUS) ? (e1.val + e2.val) : (e1.val - e2.val);
+        return e_rec;
+    }
+
+    // If are not constants, then we have to create the assembly code for calculate it
     e_rec.kind = TEMPEXPR;
     strcpy(e_rec.name, get_temp());
-
-    strcpy(left, extract(e1));
-    strcpy(right, extract(e2));
-
-    generate(extract_op(op), left, right, e_rec.name);
-
-    // codegen.c
-    // expr_rec e_rec;
-    // if (e1.kind == LITERALEXPR && e2.kind == LITERALEXPR) {
-    //     e_rec.kind = LITERALEXPR;
-    //     e_rec.val = (op.operator == PLUS) ? (e1.val + e2.val) : (e1.val - e2.val);
-    //     return e_rec;
-    // }
-
-    // e_rec.kind = TEMPEXPR;
-    // strcpy(e_rec.name, get_temp());
-    // gen_infix_op(stdout, e1, op, e2, e_rec.name);
+    gen_infix_op(stdout, e1, op, e2, e_rec.name);
 
     return e_rec;
 }
@@ -123,7 +116,7 @@ expr_rec gen_infix(expr_rec e1, op_rec op, expr_rec e2)
 // Generates code for reading an identifier.
 void read_id(expr_rec in_var)
 {
-    // gen_read(stdout, in_var.name); // codegen.c
+    gen_read(stdout, in_var.name); // codegen.c
 }
 
 // Builds a semantic record for an identifier.
@@ -153,5 +146,5 @@ expr_rec process_literal(void)
 // Generates code for writing an expression.
 void write_expr(expr_rec out_expr)
 {
-    // gen_write(stdout, out_expr); // codegen.c
+    gen_write(stdout, out_expr); // codegen.c
 }
