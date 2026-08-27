@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "codegen.h"
+#include "symbol_table.h"
 
 // Generates a formatted target instruction.
 void generate(const char *op_code,
@@ -45,15 +46,17 @@ void gen_start(FILE *out) {
 }
 
 // Finish function x86-64
-// void gen_finish(FILE *out) {
- 
-//     fprintf(out, "    mov eax, 0\n");
-//     fprintf(out, "    mov rsp, rbp\n");
-//     fprintf(out, "    pop rbp\n");
-//     fprintf(out, "    ret\n\n");
+void gen_finish(FILE *out) {
+    // STATIC, ALWAYS THE SAME, TO AVOID SEG FAULT
+    fprintf(out, "    mov eax, 0\n");
+    fprintf(out, "    mov rsp, rbp\n");
+    fprintf(out, "    pop rbp\n");
+    fprintf(out, "    ret\n\n");
+}
 
-//     /* VARIABLES AND TEMP ON .bss */
-//     fprintf(out, ".section .bss\n");
-//     // Walk by the symbol table and print each ID and temp:
-//     // fprintf(out, "    %s: .zero 4\n", symbol_name);
-// }
+void gen_symbol_table(FILE *out){
+    fprintf(out, ".section .bss\n");
+    for (int i = 0 ; i < get_symbol_count() ; i++) { // symbol_count from symbol_table.c
+        fprintf(out, "    %s: .zero 4\n", get_symbol(i));
+    }
+}
