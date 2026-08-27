@@ -15,7 +15,12 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Gen the .s file 
+
     system_goal();
 
+    // We must use gcc (system() on linux) to assembly and link the executable
+
+    // Then we have to use system() to execute the x86 file
     return 0;
 }
