@@ -9,7 +9,10 @@ extern int lookup(string s);
 // Adds a name to the symbol table.
 extern void enter(string s);
 
-// Prints then symbol table
-void dump_symbol_table()
+// Get the count of the symbol table, to iterate on it
+int get_symbol_count(void);
+
+// Get the whole symbol tables, on char *
+const char *get_symbol(int index);
 
 #endif

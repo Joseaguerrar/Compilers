@@ -28,7 +28,15 @@ void enter(string s)
     }
 }
 
-void symbol_table()
-{
-    
+// Return the count of the symbol table
+int get_symbol_count(void) {
+    return symbol_count;
+}
+
+// Uses the symbol count to iterate on the symbol table and then return the symbol table
+const char *get_symbol(int index) {
+    if (index >= 0 && index < symbol_count) {
+        return symbol_table[index];
+    }
+    return NULL;
 }
