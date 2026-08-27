@@ -8,7 +8,7 @@ int compile_program(const char *s_filename)
     // Reserve the space on memory for a command of 512 bytes (512 chars), basically a comand that, at max will have 511 chars + \0 at end
     char command[512];
 
-    // used snprintf instead of sprintf, it's safer
+    // used snprintf instead of sprintf (it's safer) to build a solid command to pass to the system()
     snprintf(command, sizeof(command), "gcc -no-pie %s -o program", s_filename);
 
     // execute the command defined above, on a very safe way :D 
