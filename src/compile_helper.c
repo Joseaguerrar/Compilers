@@ -9,7 +9,7 @@ int compile_program(const char *s_filename)
     char command[512];
 
     // used snprintf instead of sprintf (it's safer) to build a solid command to pass to the system()
-    snprintf(command, sizeof(command), "gcc -no-pie %s -o program", s_filename);
+    snprintf(command, sizeof(command), "gcc -no-pie %s -o program_mostro_binary", s_filename);
 
     // execute the command defined above, on a very safe way :D 
     int result = system(command);
