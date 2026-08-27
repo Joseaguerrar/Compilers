@@ -12,7 +12,7 @@ extern void enter(string s);
 // Get the count of the symbol table, to iterate on it
 int get_symbol_count(void);
 
-// Get the whole symbol tables, on char *
+// Get the symbol based on the index
 const char *get_symbol(int index);
 
 #endif
