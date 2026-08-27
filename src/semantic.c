@@ -11,6 +11,8 @@
 
 static const char *extract_op(op_rec op);
 
+// extern FILE *out_file; // Missing pointer to the .s file?
+
 // Declares an identifier if it is not already in the symbol table.
 static void check_id(string s)
 {
@@ -60,22 +62,20 @@ static const char *extract_op(op_rec op)
 // Initializes semantic processing.
 void start(void)
 {
-    //CALL THE START CODE GEN ON codegen.c
+    gen_start(stdout); // codegen.c
 }
 
 // Generates code to finish the target program.
 void finish(void)
 {
-    //CALL THE FINISH CODE GEN ON codegen.c
-    //CALL THE DUMP SYMBOL TABLE ON symbol_table.c
-    generate("Halt", "", "", "");
+    gen_finish(stdout); // codegen.c
+    gen_symbol_table(stdout); //codegen.c
 }
 
 // Generates code for an assignment.
 void assign(expr_rec target, expr_rec source)
 {
-    //CALL THE ASSIGN CODE GEN ON codegen.c
-    generate("Store", extract(source), target.name, "");
+    // gen_assign(stdout, target.name, source); // codegen.c
 }
 
 // Produces an operator semantic record.
@@ -107,14 +107,25 @@ expr_rec gen_infix(expr_rec e1, op_rec op, expr_rec e2)
 
     generate(extract_op(op), left, right, e_rec.name);
 
+    // codegen.c
+    // expr_rec e_rec;
+    // if (e1.kind == LITERALEXPR && e2.kind == LITERALEXPR) {
+    //     e_rec.kind = LITERALEXPR;
+    //     e_rec.val = (op.operator == PLUS) ? (e1.val + e2.val) : (e1.val - e2.val);
+    //     return e_rec;
+    // }
+
+    // e_rec.kind = TEMPEXPR;
+    // strcpy(e_rec.name, get_temp());
+    // gen_infix_op(stdout, e1, op, e2, e_rec.name);
+
     return e_rec;
 }
 
 // Generates code for reading an identifier.
 void read_id(expr_rec in_var)
 {
-    //CALL THE READ CODE GEN ON codegen.c
-    generate("Read", in_var.name, "Integer", "");
+    gen_read(); // codegen.c
 }
 
 // Builds a semantic record for an identifier.
@@ -144,6 +155,5 @@ expr_rec process_literal(void)
 // Generates code for writing an expression.
 void write_expr(expr_rec out_expr)
 {
-    //CALL THE WRITE CODE GEN ON codegen.c
-    generate("Write", extract(out_expr), "Integer", "");
+    // gen_write(stdout, out_expr); // codegen.c
 }
