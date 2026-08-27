@@ -29,7 +29,7 @@ static expr_rec identifier(void);
 static Token next_token(void)
 {
     if (!has_lookahead) {
-        current_token = scanner();
+        current_token = scanner(); // scanner.c
         has_lookahead = 1;
     }
 
@@ -84,13 +84,13 @@ void system_goal(void)
 {
     program();
     match(SCANEOF);
-    finish();
+    finish(); // semantic.c
 }
 
 // Parses a Micro program enclosed by begin and end.
 static void program(void)
 {
-    start();
+    start(); // semantic.c
     match(BEGIN);
     statement_list();
     match(END);
@@ -120,6 +120,7 @@ static void statement(void)
 {
     Token tok = next_token();
 
+    // Posible token variables on Micro language
     switch (tok) {
         case ID: {
             expr_rec target;
