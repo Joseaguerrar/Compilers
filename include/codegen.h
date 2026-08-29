@@ -31,4 +31,7 @@ void gen_assign(FILE *out, const char *target, expr_rec source);
 // Generates the stantard code sequence on assembly to handle the aritmetics operations
 void gen_infix_op(FILE *out, expr_rec e1, op_rec op, expr_rec e2, const char *target);
 
+// Generates the stantard code sequence on assembly to handle the conditional expression
+void gen_cond_op(FILE *out, expr_rec e1, expr_rec e2, expr_rec e3, const char *target);
+
 #endif

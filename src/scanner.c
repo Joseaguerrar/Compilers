@@ -102,6 +102,10 @@ Token scanner(void)
             return PLUSOP;
         }
 
+        if (in_char == '|') {
+            return CONDITIONALOP;
+        }
+
         // Check for minus operator or comment
         if (in_char == '-') {
             c = getchar();

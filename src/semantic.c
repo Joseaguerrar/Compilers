@@ -70,6 +70,10 @@ void finish(void)
     gen_symbol_table(stdout); //codegen.c
 }
 
+void evaluate(expr_rec source) {
+    
+}
+
 // Generates code for an assignment.
 void assign(expr_rec target, expr_rec source)
 {
@@ -109,6 +113,21 @@ expr_rec gen_infix(expr_rec e1, op_rec op, expr_rec e2)
     e_rec.kind = TEMPEXPR;
     strcpy(e_rec.name, get_temp());
     gen_infix_op(stdout, e1, op, e2, e_rec.name);
+
+    return e_rec;
+}
+
+expr_rec gen_cond(expr_rec e1, expr_rec e2, expr_rec e3) {
+
+    expr_rec e_rec;
+
+    if (e1.kind == LITERALEXPR) {
+        return (e1.val != 0) ? e2 : e3;
+    }
+
+    e_rec.kind = TEMPEXPR;
+    strcpy(e_rec.name, get_temp());
+    gen_cond_op(stdout, e1, e2, e3, e_rec.name);
 
     return e_rec;
 }

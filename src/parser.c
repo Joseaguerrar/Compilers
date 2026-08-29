@@ -74,6 +74,7 @@ static const char *token_name(Token token)
         case ASSIGNOP:   return "ASSIGNOP";
         case PLUSOP:     return "PLUSOP";
         case MINUSOP:    return "MINUSOP";
+        case CONDITIONALOP: return "CONDITIONALOP";
         case SCANEOF:    return "SCANEOF";
         default:         return "UNKNOWN";
     }
@@ -227,7 +228,18 @@ static expr_rec primary(void)
         case LPAREN:
             match(LPAREN);
             result = expression();
+
+            if (next_token() == CONDITIONALOP) {
+                match(CONDITIONALOP);
+                expr_rec result_two = expression();
+                match(CONDITIONALOP);
+                expr_rec result_three = expression();
+
+                result = gen_cond(result, result_two, result_three);
+            }
+            
             match(RPAREN);
+
             break;
 
         default:

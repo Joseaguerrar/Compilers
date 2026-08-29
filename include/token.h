@@ -16,6 +16,7 @@ typedef enum token_types{
     ASSIGNOP,
     PLUSOP,
     MINUSOP,
+    CONDITIONALOP,
     SCANEOF
 } Token;
 

@@ -122,4 +122,27 @@ void gen_infix_op(FILE *out, expr_rec e1, op_rec op, expr_rec e2, const char *ta
     fprintf(out, "    mov dword ptr [%s], eax\n\n", target);
 }
 
-// Future conditionals for the exercices 8 and 10 of the book?
+void gen_cond_op(FILE *out, expr_rec e1, expr_rec e2, expr_rec e3, const char *target) {
+    if (e1.kind == LITERALEXPR) {
+        fprintf(out, "    mov ecx, %d\n", e1.val);
+    } else {
+        fprintf(out, "    mov ecx, dword ptr [%s]\n", e1.name);
+    }
+
+    if (e3.kind == LITERALEXPR) {
+        fprintf(out, "    mov eax, %d\n", e3.val);
+    } else {
+        fprintf(out, "    mov eax, dword ptr [%s]\n", e3.name);
+    }
+
+    if (e2.kind == LITERALEXPR) {
+        fprintf(out, "    mov edx, %d\n", e2.val);
+    } else {
+        fprintf(out, "    mov edx, dword ptr [%s]\n", e2.name);
+    }
+
+    fprintf(out, "    test ecx, ecx\n");
+    fprintf(out, "    cmovne eax, edx\n");
+
+    fprintf(out, "    mov dword ptr [%s], eax\n\n", target);
+}
