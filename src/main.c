@@ -9,6 +9,7 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 
 #include "parser.h"
 #include "compile_helper.h"
@@ -25,8 +26,22 @@
  */
 int main(int argc, char *argv[])
 {
+    
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <source.micro>\n", argv[0]);
+        return 1;
+    }
+    
+    int saved_stdin = dup(STDIN_FILENO);
+    int saved_stdout = dup(STDOUT_FILENO);
+
+    if (saved_stdin == -1) {
+        perror("Error saving STDIN");
+        return 1;
+    }
+
+    if (saved_stdout == -1) {
+        perror("Error saving STDOUT");
         return 1;
     }
 
@@ -43,6 +58,16 @@ int main(int argc, char *argv[])
     system_goal();
 
     fflush(stdout);
+
+    if (dup2(saved_stdin, STDIN_FILENO) == -1) {
+        perror("Error duplicating STDIN");
+        return 1;
+    }
+
+    if (dup2(saved_stdout, STDOUT_FILENO) == -1) {
+        perror("Error duplicating STDIN");
+        return 1;
+    }
 
     compile_program("program_mostro.s");
 
