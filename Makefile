@@ -34,12 +34,3 @@ clean:
 	rm -rf $(OBJDIR) $(TARGET)
 
 .PHONY: all clean
-
-# Use
-# 
-# make 														(Compile the project)
-# ./microc tests/prueba.micro 		(run the compiler with a test file)
-# make clean											(Clean build files)
-
-# If the makefile don't exist:
-# gcc -Wall -Wextra -std=c11 -Iinclude -g src/*.c -o microc # (All of the ".c" into microc)
