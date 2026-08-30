@@ -1,18 +1,18 @@
 # Compiler and flags
-CC      = gcc																									# Compiler to use [C] -> [x86]  
-CFLAGS  = -Wall -Wextra -std=c11 -Iinclude -g 								# -std=c11: Enforces the C11 lang
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c11 -Iinclude -g
 
 # Executable program, the final output
-TARGET  = microc
+TARGET = microc
 
-# Directories to use [src/ , include/, obj/]
-SRCDIR  = src
-INCDIR  = include
-OBJDIR  = obj
+# Directories
+SRCDIR = src
+INCDIR = include
+OBJDIR = obj
 
-# Sources and automatic objects
-SRCS    = $(wildcard $(SRCDIR)/*.c) 													# Detects any ".c" file on "src/"
-OBJS    = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRCS))		# Uses "pattern substitution" (patsubst) to traslate each ".c" -> ".o"
+# Sources and objects
+SRCS = $(wildcard $(SRCDIR)/*.c)
+OBJS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRCS))
 
 # Default rule
 all: $(TARGET)
@@ -25,7 +25,7 @@ $(TARGET): $(OBJS)
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Craete object dir
+# Create object dir
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 

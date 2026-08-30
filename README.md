@@ -1,44 +1,17 @@
-# MicroC Compiler - Build & Usage Guide
+# Micro-x86_64 Compiler - Build & Usage Guide
 
 This repository contains the source code for the **MicroC** compiler. The build process is managed using GNU `make`.
 
 ---
 
-## 📋 Prerequisites
-
-To compile and run this project, ensure you have the following tools installed:
+## Prerequisites
 
 * **GCC** (GNU Compiler Collection) supporting `C11`
 * **GNU Make**
 
 ---
 
-## 📁 Project Structure
-
-```text
-Compilers/
-├── include/           # Header files (.h)
-│   ├── codegen.h
-│   ├── parser.h
-│   ├── scanner.h
-│   ├── semantic.h
-│   ├── symbol_table.h
-│   └── token.h
-├── src/               # C source code (.c)
-│   ├── codegen.c
-│   ├── main.c
-│   ├── parser.c
-│   ├── scanner.c
-│   ├── semantic.c
-│   └── symbol_table.c
-├── obj/               # Generated object files (.o) [Created during build]
-├── Makefile           # Build system configuration
-└── microc             # Compiled executable [Created during build]
-```
-
----
-
-## 🛠️ Usage with `make`
+## Usage with `make`
 
 ### 1. Compile the Project
 Build the executable (`microc`) and object files (`obj/*.o`):
@@ -55,7 +28,7 @@ Execute the compiler with a sample `.micro` source file:
 ```bash
 ./microc tests/prueba.micro
 ```
-The secund argument, in this case "tests/prueba.micro" can be replaced with any other micro file
+The second argument, in this case "tests/prueba.micro" can be replaced with any other micro file
 
 ### 3. Clean Build Files
 Remove the `obj/` directory and the `microc` executable:
@@ -65,7 +38,7 @@ make clean
 
 ---
 
-## 💡 Manual Compilation (Without Makefile)
+## Manual Compilation
 
 If `make` is not available on your system, you can compile all source files directly using `gcc`:
 
@@ -73,7 +46,7 @@ If `make` is not available on your system, you can compile all source files dire
 gcc -Wall -Wextra -std=c11 -Iinclude -g src/*.c -o microc
 ```
 
-### Manual Step-by-Step Build (Object Files + Linking)
+### Manual Step-by-Step Build
 
 1. **Create the object directory:**
    ```bash
