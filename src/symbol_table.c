@@ -1,13 +1,25 @@
+/**
+ * @file symbol_table.c
+ * @brief Implementation of the Micro symbol table.
+ *
+ * The table is a fixed-size array of names searched linearly. This is adequate
+ * for Micro, whose programs are small and whose identifiers carry no attribute
+ * other than their spelling.
+ */
+
 #include <string.h>
 
 #include "symbol_table.h"
 
+/** @brief Maximum number of names the symbol table can hold. */
 #define MAX_SYMBOLS 100
 
+/** @brief Storage for the names entered into the table. */
 static string symbol_table[MAX_SYMBOLS];
+
+/** @brief Number of names currently held in the table. */
 static int symbol_count = 0;
 
-// Checks whether a name is already in the symbol table.
 int lookup(string s)
 {
     for (int i = 0; i < symbol_count; i++) {
@@ -19,7 +31,6 @@ int lookup(string s)
     return 0;
 }
 
-// Adds a name to the symbol table.
 void enter(string s)
 {
     if (symbol_count < MAX_SYMBOLS) {
@@ -28,12 +39,10 @@ void enter(string s)
     }
 }
 
-// Return the count of the symbol table
 int get_symbol_count(void) {
     return symbol_count;
 }
 
-// Uses the symbol count to iterate on the symbol table and then return the symbol based on the index given
 const char *get_symbol(int index) {
     if (index >= 0 && index < symbol_count) {
         return symbol_table[index];

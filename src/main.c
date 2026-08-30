@@ -1,10 +1,28 @@
+/**
+ * @file main.c
+ * @brief Main of the Micro compiler.
+ *
+ * Redirects the standard streams so that the scanner reads the
+ * source program file path from standard input and the code generator writes the target
+ * program to standard output, then parses the program and hands the resulting
+ * assembly file to the assembly compiler.
+ */
+
 #include <stdio.h>
 
 #include "parser.h"
 #include "compile_helper.h"
 #include "execute_helper.h"
 
-// Opens the Micro source file and starts the compilation.
+/**
+ * @brief Compiles, assembles, and runs a Micro source program.
+ *
+ * @param argc Number of command-line arguments, which must be exactly two.
+ * @param argv Argument vector, whose second element is the path of the Micro
+ *             source file.
+ * @return 0 on success, or 1 if the arguments are malformed or a file cannot
+ *         be opened.
+ */
 int main(int argc, char *argv[])
 {
     if (argc != 2) {
@@ -12,28 +30,22 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Handle error opening the file
     if (freopen(argv[1], "r", stdin) == NULL) {
         perror("Error opening source file");
         return 1;
     }
 
-    // Handle error creating the ".s" file, all the stdout will go to the ".s" file
     if (freopen("program_mostro.s", "w", stdout) == NULL) {
         perror("Error creating output '.s' file");
         return 1;
     }
 
-    // Execute our compiler
     system_goal();
 
-    // Make sure all the buffer on c to be writed on the file
     fflush(stdout);
 
-    // Use the compile helper to get the executable file
     compile_program("program_mostro.s");
 
-    // Use the execute helper to run the program
     execute_program("program_mostro_binary");
 
     return 0;

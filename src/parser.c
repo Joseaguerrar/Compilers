@@ -1,3 +1,17 @@
+/**
+ * @file parser.c
+ * @brief Implementation of the Micro recursive descent parser.
+ *
+ * Each non-terminal of the grammar is implemented by one function, and a
+ * single token of lookahead is enough to select the production. The
+ * parser calls the semantic routines directly as soon as it recognizes a
+ * construct that requires translation.
+ *
+ * Syntax errors are reported but not repaired: the parser neither discards the
+ * incorrect token nor abandons the translation; a malformed program still
+ * produces an assembly file.
+ */
+
 #include <stdio.h>
 
 #include "parser.h"
@@ -5,38 +19,136 @@
 #include "semantic.h"
 
 Token current_token;
+
+/** @brief Indicates whether current_token holds a token that has not been consumed. */
 static int has_lookahead = 0;
 
+/**
+ * @brief Converts a token class into a readable name for log messages.
+ *
+ * @param token The token class to be named.
+ * @return A constant string naming the class, or @c "UNKNOWN" if the value
+ * does not correspond to any token.
+ */
 static const char *token_name(Token token);
-//
+
+/**
+ * @brief Inspects the next token without consuming it.
+ *
+ * The scanner is called only when no lookahead token is available, so repeated
+ * calls return the same token.
+ *
+ * @return The class of the lookahead token.
+ */
 static Token next_token(void);
+
+/**
+ * @brief Consumes the lookahead token if it belongs to the expected class.
+ *
+ * When the classes differ a syntax error is reported and the token is left in
+ * place.
+ *
+ * @param expected The token class required by the current production.
+ */
 static void match(Token expected);
+
+/**
+ * @brief Reports a token that does not match the current production.
+ *
+ * The message is written to standard error because standard output carries the
+ * generated assembly code.
+ *
+ * @param expected The token class required by the production.
+ * @param actual The token class actually found in the input.
+ */
 static void syntax_error(Token expected, Token actual);
 
-// Declarations for parsing functions
+/**
+ * @brief Parses the body of a Micro program.
+ *
+ * The production is @c program @c -> @c begin @c statement_list @c end.
+ */
 static void program(void);
+
+/**
+ * @brief Parses a sequence of one or more statements.
+ *
+ * Statements are parsed while the lookahead token can begin one.
+ */
 static void statement_list(void);
+
+/**
+ * @brief Parses a single statement, selected by its first token.
+ *
+ * An identifier generates an assignment, and the reserved words @c read and
+ * @c write introduce the input and output statements respectively. Any other
+ * token is reported as a syntax error.
+ */
 static void statement(void);
+
+/**
+ * @brief Parses an expression and generates the code that evaluates it.
+ *
+ * The production is a sequence of primaries separated by add or minus operators.
+ *
+ * @return The semantic record describing the value of the expression.
+ */
 static expr_rec expression(void);
+
+/**
+ * @brief Parses a primary expression.
+ *
+ * A primary is an identifier, an integer literal, a parenthesized expression,
+ * or the conditional expression @c (E1|E2|E3).
+ *
+ * @return The semantic record describing the value of the primary.
+ */
 static expr_rec primary(void);
+
+/**
+ * @brief Parses an add or minus operator.
+ *
+ * @return The semantic record describing the operator that was matched.
+ */
 static op_rec add_op(void);
+
+/**
+ * @brief Parses a comma separated list of identifiers.
+ *
+ * The code that reads a value into each identifier is generated as soon as the
+ * identifier is recognized.
+ */
 static void id_list(void);
+
+/**
+ * @brief Parses a comma separated list of expressions.
+ *
+ * The code that writes each value is generated as soon as the corresponding
+ * expression is recognized.
+ */
 static void expr_list(void);
 
+/**
+ * @brief Parses an identifier and builds its semantic record.
+ *
+ * The semantic routine is called immediately after the token is matched,
+ * before the parser requests any further lookahead, because the name of
+ * the identifier is held in a buffer that the scanner clears on every call.
+ *
+ * @return The semantic record describing the identifier.
+ */
 static expr_rec identifier(void);
 
-// Returns the next token without consuming it.
 static Token next_token(void)
 {
     if (!has_lookahead) {
-        current_token = scanner(); // scanner.c
+        current_token = scanner();
         has_lookahead = 1;
     }
 
     return current_token;
 }
 
-// Checks and consumes the expected token.
 static void match(Token expected)
 {
     Token actual = next_token();
@@ -48,7 +160,6 @@ static void match(Token expected)
     }
 }
 
-// Reports an unexpected token as a syntax error.
 static void syntax_error(Token expected, Token actual)
 {
     fprintf(stderr,
@@ -57,7 +168,6 @@ static void syntax_error(Token expected, Token actual)
             token_name(actual));
 }
 
-// Returns the readable name of a token for when a syntax error occurs..
 static const char *token_name(Token token)
 {
     switch (token) {
@@ -80,24 +190,21 @@ static const char *token_name(Token token)
     }
 }
 
-// Parses the complete input and verifies the end of file.
 void system_goal(void)
 {
     program();
     match(SCANEOF);
-    finish(); // semantic.c
+    finish();
 }
 
-// Parses a Micro program enclosed by begin and end.
 static void program(void)
 {
-    start(); // semantic.c
+    start();
     match(BEGIN);
     statement_list();
     match(END);
 }
 
-// Parses one or more Micro statements.
 static void statement_list(void)
 {
     statement();
@@ -116,12 +223,10 @@ static void statement_list(void)
     }
 }
 
-// Parses a Micro statement based on its first token.
 static void statement(void)
 {
     Token tok = next_token();
 
-    // Posible token variables on Micro language
     switch (tok) {
         case ID: {
             expr_rec target;
@@ -158,7 +263,6 @@ static void statement(void)
     }
 }
 
-// Parses a comma separated list of identifiers and generates read operations.
 static void id_list(void)
 {
     expr_rec id;
@@ -173,7 +277,6 @@ static void id_list(void)
     }
 }
 
-// Parses an expression and returns its semantic record.
 static expr_rec expression(void)
 {
     expr_rec left;
@@ -192,7 +295,6 @@ static expr_rec expression(void)
     return left;
 }
 
-// Parses an addition or subtraction operator and returns its semantic record.
 static op_rec add_op(void)
 {
     Token tok = next_token();
@@ -210,7 +312,6 @@ static op_rec add_op(void)
     return process_op();
 }
 
-// Parses an identifier, integer literal, or parenthesized expression.
 static expr_rec primary(void)
 {
     Token tok = next_token();
@@ -252,7 +353,6 @@ static expr_rec primary(void)
     return result;
 }
 
-// Parses a comma separated list of expressions and generates write operations.
 static void expr_list(void)
 {
     expr_rec expr;
@@ -267,7 +367,6 @@ static void expr_list(void)
     }
 }
 
-// Parses an identifier and returns its semantic record.
 static expr_rec identifier(void)
 {
     match(ID);

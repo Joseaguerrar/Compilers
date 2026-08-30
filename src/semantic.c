@@ -1,4 +1,12 @@
-// FROM BOOK pages 43, 45
+/**
+ * @file semantic.c
+ * @brief Implementation of the semantic action routines of the Micro compiler.
+ *
+ * These routines are called directly by the parser. They maintain the symbol
+ * table, allocate the temporaries required to hold intermediate results, and
+ * decide whether an operation can be resolved at compile time or must be
+ * translated into instructions by the code generator.
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -9,18 +17,33 @@
 #include "parser.h"
 #include "scanner.h"
 
-static const char *extract_op(op_rec op);
+/**
+ * @brief Enters a name if it is not yet in the the symbol table.
+ *
+ * Micro has no explicit declarations, so every identifier and every generated
+ * temporary is declared implicitly the first time it is used.
+ *
+ * @param s The name to be declared.
+ */
+static void check_id(string s);
 
-// Declares an identifier if it is not already in the symbol table.
+/**
+ * @brief Allocates a new temporary and declares it in the symbol table.
+ *
+ * Temporaries are named @c Temp_1, @c Temp_2, and so on, in the order in which
+ * they are requested.
+ *
+ * @return The name of the new temporary.
+ */
+static char *get_temp(void);
+
 static void check_id(string s)
 {
     if (!lookup(s)) {
         enter(s);
-        // generate("Declare", s, "Integer", "");
     }
 }
 
-// Generates a new temporary identifier.
 static char *get_temp(void)
 {
     static int max_temp = 0;
@@ -33,54 +56,22 @@ static char *get_temp(void)
     return tempname;
 }
 
-// Extracts the string representation of an expression record.
-static char *extract(expr_rec source)
-{
-    static char buffer[MAXIDLEN];
-
-    if (source.kind == LITERALEXPR) {
-        sprintf(buffer, "%d", source.val);
-    } else {
-        strcpy(buffer, source.name);
-    }
-
-    return buffer;
-}
-
-// Extracts the target opcode from an operator record.
-static const char *extract_op(op_rec op)
-{
-    if (op.operator == PLUS) {
-        return "Add";
-    }
-
-    return "Sub";
-}
-
-// Initializes semantic processing.
 void start(void)
 {
-    gen_start(stdout); // codegen.c
+    gen_start(stdout);
 }
 
-// Generates code to finish the target program.
 void finish(void)
 {
-    gen_finish(stdout); // codegen.c
-    gen_symbol_table(stdout); //codegen.c
+    gen_finish(stdout);
+    gen_symbol_table(stdout);
 }
 
-void evaluate(expr_rec source) {
-    
-}
-
-// Generates code for an assignment.
 void assign(expr_rec target, expr_rec source)
 {
-    gen_assign(stdout, target.name, source); // codegen.c
+    gen_assign(stdout, target.name, source);
 }
 
-// Produces an operator semantic record.
 op_rec process_op(void)
 {
     op_rec o;
@@ -94,22 +85,16 @@ op_rec process_op(void)
     return o;
 }
 
-// Generates code for an infix expression and returns its temporary result, or detects if the operation can be solved during compiling
 expr_rec gen_infix(expr_rec e1, op_rec op, expr_rec e2)
 {
-    // op = ["-" or "+"]
-    // e1.kind = [IDEXPR -> Variables, LITERALEXPR -> constant numbers, TEMPEXPR -> intermediate results]
-    expr_rec e_rec; // Expression Record
+    expr_rec e_rec;
 
-    // Constant folding Exercise 8, avoid generate extra code
-    // If e1 and e2 constants, return the result, not create the assembly code for that
     if (e1.kind == LITERALEXPR && e2.kind == LITERALEXPR) {
         e_rec.kind = LITERALEXPR;
         e_rec.val = (op.operator == PLUS) ? (e1.val + e2.val) : (e1.val - e2.val);
         return e_rec;
     }
 
-    // If are not constants, then we have to create the assembly code for calculate it
     e_rec.kind = TEMPEXPR;
     strcpy(e_rec.name, get_temp());
     gen_infix_op(stdout, e1, op, e2, e_rec.name);
@@ -132,13 +117,11 @@ expr_rec gen_cond(expr_rec e1, expr_rec e2, expr_rec e3) {
     return e_rec;
 }
 
-// Generates code for reading an identifier.
 void read_id(expr_rec in_var)
 {
-    gen_read(stdout, in_var.name); // codegen.c
+    gen_read(stdout, in_var.name);
 }
 
-// Builds a semantic record for an identifier.
 expr_rec process_id(void)
 {
     expr_rec t;
@@ -151,7 +134,6 @@ expr_rec process_id(void)
     return t;
 }
 
-// Builds a semantic record for an integer literal.
 expr_rec process_literal(void)
 {
     expr_rec t;
@@ -162,8 +144,7 @@ expr_rec process_literal(void)
     return t;
 }
 
-// Generates code for writing an expression.
 void write_expr(expr_rec out_expr)
 {
-    gen_write(stdout, out_expr); // codegen.c
+    gen_write(stdout, out_expr);
 }
