@@ -111,12 +111,13 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    system_goal();
+    int compilation_result = system_goal();
 
     if (fflush(stdout) == EOF) {
         perror("Error flushing assembly output");
         close(saved_stdin);
         close(saved_stdout);
+        remove(assembly_filename);
         free(assembly_filename);
         return 1;
     }
@@ -125,6 +126,7 @@ int main(int argc, char *argv[])
         perror("Error restoring STDIN");
         close(saved_stdin);
         close(saved_stdout);
+        remove(assembly_filename);
         free(assembly_filename);
         return 1;
     }
@@ -133,12 +135,20 @@ int main(int argc, char *argv[])
         perror("Error restoring STDOUT");
         close(saved_stdin);
         close(saved_stdout);
+        remove(assembly_filename);
         free(assembly_filename);
         return 1;
     }
 
     close(saved_stdin);
     close(saved_stdout);
+
+    if (compilation_result != 0) {
+        remove(assembly_filename);
+        fprintf(stderr, "Compilation failed: invalid Micro source program.\n");
+        free(assembly_filename);
+        return 1;
+    }
 
     if (compile_program(assembly_filename) != 0) {
         free(assembly_filename);
