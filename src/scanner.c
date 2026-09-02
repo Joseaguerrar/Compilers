@@ -29,6 +29,13 @@ static int buffer_index = 0;
 static Token check_reserved(void);
 
 /**
+ * @brief Reports if a lexical error has been found.
+ *
+ * @return 1 if a lexical error has occurred, or 0 otherwise.
+ */
+static int lexical_error_found = 0;
+
+/**
  * @brief Reports a character that cannot begin any token.
  *
  * The message is written to standard error because standard output carries the
@@ -55,7 +62,18 @@ static Token check_reserved(void)
 
 static void lexical_error(int c)
 {
+    lexical_error_found = 1;
     fprintf(stderr, "Lexical error: invalid character '%c'\n", c);
+}
+
+int scanner_had_error(void)
+{
+    return lexical_error_found;
+}
+
+void scanner_reset_error(void)
+{
+    lexical_error_found = 0;
 }
 
 void clear_buffer(void)
