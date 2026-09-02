@@ -50,7 +50,7 @@ static char *get_temp(void)
     static char tempname[MAXIDLEN];
 
     max_temp++;
-    sprintf(tempname, "Temp_%d", max_temp);
+    sprintf(tempname, "Temp&%d", max_temp);
     check_id(tempname);
 
     return tempname;
