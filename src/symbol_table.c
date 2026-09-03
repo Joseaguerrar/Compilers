@@ -12,7 +12,7 @@
 #include "symbol_table.h"
 
 /** @brief Maximum number of names the symbol table can hold. */
-#define MAX_SYMBOLS 100
+#define MAX_SYMBOLS 1000
 
 /** @brief Storage for the names entered into the table. */
 static string symbol_table[MAX_SYMBOLS];
