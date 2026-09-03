@@ -236,8 +236,14 @@ static void statement_list(void)
                 statement();
                 break;
 
-            default:
+            case END:
                 return;
+
+            default:
+                fprintf(stderr,
+                        "Syntax error: expected ID, READ, WRITE or END, found %s\n",
+                        token_name(current_token));
+                longjmp(parser_abort, 1);
         }
     }
 }
@@ -278,6 +284,7 @@ static void statement(void)
             fprintf(stderr,
                     "Syntax error: expected ID, READ or WRITE, found %s\n",
                     token_name(tok));
+            longjmp(parser_abort, 1);
             break;
     }
 }
@@ -326,6 +333,7 @@ static op_rec add_op(void)
         fprintf(stderr,
                 "Syntax error: expected PLUSOP or MINUSOP, found %s\n",
                 token_name(tok));
+        longjmp(parser_abort, 1);
     }
 
     return process_op();
@@ -366,6 +374,9 @@ static expr_rec primary(void)
             fprintf(stderr,
                     "Syntax error: expected ID, INTLITERAL or LPAREN, found %s\n",
                     token_name(tok));
+
+            longjmp(parser_abort, 1);
+            
             break;
     }
 
