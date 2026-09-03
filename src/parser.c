@@ -13,6 +13,7 @@
  */
 
 #include <stdio.h>
+#include <setjmp.h>
 
 #include "parser.h"
 #include "scanner.h"
@@ -22,6 +23,9 @@ Token current_token;
 
 /** @brief Indicates whether current_token holds a token that has not been consumed. */
 static int has_lookahead = 0;
+
+/** @brief Buffer for the setjmp/longjmp mechanism. */
+static jmp_buf parser_abort;
 
 /**
  * @brief Converts a token class into a readable name for log messages.
@@ -144,6 +148,10 @@ static Token next_token(void)
     if (!has_lookahead) {
         current_token = scanner();
         has_lookahead = 1;
+
+        if (scanner_had_error()) {
+            longjmp(parser_abort, 1);
+        }
     }
 
     return current_token;
@@ -166,6 +174,8 @@ static void syntax_error(Token expected, Token actual)
             "Syntax error: expected token %s, but found %s\n",
             token_name(expected),
             token_name(actual));
+    
+    longjmp(parser_abort, 1);
 }
 
 static const char *token_name(Token token)
@@ -190,11 +200,20 @@ static const char *token_name(Token token)
     }
 }
 
-void system_goal(void)
+int system_goal(void)
 {
+    has_lookahead = 0;
+    scanner_reset_error();
+
+    if (setjmp(parser_abort) != 0) {
+        return 1;
+    }
+
     program();
     match(SCANEOF);
     finish();
+
+    return 0;
 }
 
 static void program(void)
@@ -217,8 +236,14 @@ static void statement_list(void)
                 statement();
                 break;
 
-            default:
+            case END:
                 return;
+
+            default:
+                fprintf(stderr,
+                        "Syntax error: expected ID, READ, WRITE or END, found %s\n",
+                        token_name(current_token));
+                longjmp(parser_abort, 1);
         }
     }
 }
@@ -259,6 +284,7 @@ static void statement(void)
             fprintf(stderr,
                     "Syntax error: expected ID, READ or WRITE, found %s\n",
                     token_name(tok));
+            longjmp(parser_abort, 1);
             break;
     }
 }
@@ -307,6 +333,7 @@ static op_rec add_op(void)
         fprintf(stderr,
                 "Syntax error: expected PLUSOP or MINUSOP, found %s\n",
                 token_name(tok));
+        longjmp(parser_abort, 1);
     }
 
     return process_op();
@@ -347,6 +374,9 @@ static expr_rec primary(void)
             fprintf(stderr,
                     "Syntax error: expected ID, INTLITERAL or LPAREN, found %s\n",
                     token_name(tok));
+
+            longjmp(parser_abort, 1);
+            
             break;
     }
 

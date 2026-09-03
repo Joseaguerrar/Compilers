@@ -1,0 +1,4 @@
+microc
+program_mostro_binary
+/tests/*.s
+/obj

@@ -31,6 +31,18 @@ extern char token_buffer[BUFFER_SIZE];
 Token scanner(void);
 
 /**
+ * @brief Reports whether the scanner has detected a lexical error.
+ *
+ * @return 1 if a lexical error has occurred, or 0 otherwise.
+ */
+int scanner_had_error(void);
+
+/**
+ * @brief Clears the lexical error state of the scanner.
+ */
+void scanner_reset_error(void);
+
+/**
  * @brief Empties the token buffer.
  */
 void clear_buffer(void);
