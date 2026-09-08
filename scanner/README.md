@@ -1,6 +1,8 @@
 # Proyecto 1: Analizador Léxico
 
-## Instrucciones | Ejecución
+## Instrucciones
+
+## Ejecución
 
 1. Programa se invocará desde línea de comando de una consola.
     * Argumentos:
@@ -9,7 +11,7 @@
 
 2. Acepta cualquier tipo de extensión.
 
-## Instrucciones | Preproceso
+## Preproceso
 
 1. Directivas
     * #include
@@ -23,7 +25,7 @@
 
 2. Eliminar los comentarios contenidos en el archivo de entrada (manejar las dos formas de comentarios de C).
 
-## Instrucciones | *Scanner*
+## *Scanner*
 
 1. Utilizar la herramienta *flex*. Es permitido utilizarse en el preprocesador.
 
@@ -33,7 +35,7 @@
 
 4. Entrada de esta parte del programa es el archivo de texto temproal generado por el preprocesador. Presumimos que es un programa escrito en C, pero podría ser cualquier archivo, ya sea texto o binario.
 
-## Instrucciones | Salida
+## Salida
 
 1. Debe producir una presentación `Beamer`.
 
@@ -59,3 +61,34 @@
 
     * Histograma de las cantidades de cada tipo de *token* encontrados en el fuente.
         * Preparar un archivo de datos e invocar al comando `gnuplot` desde el programa o usar el package `pgfplots` de `Latex`.
+
+# Proyect 1: Lexical Analysis
+
+## Requirements
+
+1. Install `Flex`
+
+```
+sudo apt-get update
+sudo apt-get install flex
+```
+
+## Compilation
+
+1. Compile `.l` or `.lex` extension program
+
+```
+flex *.l
+```
+
+2. Compile created `lex.yy.c` with gcc.
+
+```
+gcc lex.yy.c
+```
+
+3. Execute
+
+```
+./a.out
+```
