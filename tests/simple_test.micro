@@ -1,5 +1,0 @@
-begin
-    read(a, b);
-    c := a + b - 10;
-    write(c);
-end

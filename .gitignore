@@ -1,4 +1,4 @@
-microc
-program_mostro_binary
-/tests/*.s
-/obj
+MicroCompiler/microc
+MicroCompiler/program_mostro_binary
+MicroCompiler/tests/*.s
+MicroCompiler/obj
