@@ -1,0 +1,28 @@
+-- Programa de prueba para el compilador de Micro
+-- Incluye E/S, operaciones aritmeticas, constant folding y condicionales
+
+begin
+    -- 1. Prueba de lectura (I/O)
+    read(a, b);
+
+    -- 2. Prueba de operaciones basicas y parentesis
+    c := a + (b - 5);
+
+    -- 3. Prueba de Constant Folding (Ejercicio 8):
+    -- El compilador debe resolver 100 + 50 - 25 = 125 en tiempo de compilacion
+    d := 100 + 50 - 25;
+
+    -- 4. Prueba combinada (variables + constantes)
+    total := c + d;
+
+    -- 5. Prueba de Expresiones Condicionales (Ejercicio 10):
+    -- Sintaxis: ( E1 | E2 | E3 ) -> Si E1 != 0 retorna E2, sino retorna E3
+    -- Si 'a' no es cero asigna total, de lo contrario asigna 0
+    res1 := ( a | total | 0 );
+
+    -- Condicional anidado o con constantes
+    res2 := ( b - 10 | 999 | 111 );
+
+    -- 6. Prueba de escritura múltiple (I/O)
+    write(c, d, total, res1, res2);
+end
