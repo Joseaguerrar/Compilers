@@ -84,6 +84,16 @@
         return M_EXPR;
     }
 
+    static const char* macro_find(const char* key) {
+        for (int i = 0; i < macro_count; i++) {
+            if (strcmp(macro_table[i].key, key) == 0) {
+                return macro_table[i].value;
+            }
+        }
+
+        return NULL;
+    }
+
     static int macro_handle_define(const char* text) {
         const char* temp = text;
 
@@ -139,6 +149,24 @@
 %%
 ^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*[^\n]* {
     macro_handle_define(yytext);
+}
+
+\"([^\\\n]|\\.)*\"    {
+    printf("%s", yytext);
+}
+
+\'([^\\'\n]|\\.)+\' {
+    printf("%s", yytext);
+}
+
+[A-Za-z_][A-Za-z0-9_]* {
+    const char* value = macro_find(yytext);
+
+    if (value != NULL) {
+        printf("%s", value);
+    } else {
+        printf("%s", yytext);
+    }
 }
 
 "//"[^\n]*          {;}
