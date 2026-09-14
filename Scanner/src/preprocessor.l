@@ -8,7 +8,7 @@
     #define MAX_KEY 128
     #define MAX_VALUE 1024
     #define MAX_DEPTH 32
-    #define MAX_TYPES 7
+    #define MAX_TYPES 8
 
     typedef enum {
         M_INT, //
@@ -22,7 +22,7 @@
     } MacroType;
 
     static const char* TYPE_NAME[MAX_TYPES] = 
-    {"int", "double", "string", "char", "ident", "expr", "empty"};
+    {"int", "double", "string", "char", "ident", "expr", "expanded", "empty"};
 
     typedef struct {
         char* key;
@@ -85,7 +85,7 @@
     }
 
     static int macro_handle_define(const char* text) {
-        char* temp = text;
+        const char* temp = text;
 
         char key_buffer[MAX_KEY];
         char value_buffer[MAX_VALUE];
