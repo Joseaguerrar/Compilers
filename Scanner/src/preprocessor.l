@@ -33,12 +33,22 @@
     static Macro macro_table[MAX_MACROS];
     static int macro_count = 0;
 
+    /*
+     * Prints all macros currently stored in the macro table.
+     * Used for debugging and verification of the stored key,
+     * value and detected macro type.
+     */
     static void print_macros() {
         for (int i = 0; i < macro_count; i++) {
             printf("\n%s\n%s\n%d\n", macro_table[i].key,macro_table[i].value, macro_table[i].type );
         }
     }
 
+    /*
+     * Inserts a new macro into the macro table.
+     * Checks that the table is not full and that the macro
+     * has not already been defined before storing it.
+     */
     static int macro_insert(const char* key, const char* value, const MacroType type) {
         if (macro_count >= MAX_MACROS) {
           fprintf(stderr, "Error: tabla de macros llena\n");
@@ -61,6 +71,11 @@
         return 1;
     }
 
+    /*
+     * Determines the type of value associated with a macro.
+     * Values are classified as empty, string, char, integer,
+     * double, identifier or expression.
+     */
     static MacroType macro_type(const char* value) {
         const char* valuePointer = value;
 
@@ -84,6 +99,11 @@
         return M_EXPR;
     }
 
+    /*
+     * Searches for a macro by its key in the macro table.
+     * Returns the associated value if found, or NULL if the
+     * identifier has not been defined as a macro.
+     */
     static const char* macro_find(const char* key) {
         for (int i = 0; i < macro_count; i++) {
             if (strcmp(macro_table[i].key, key) == 0) {
@@ -94,6 +114,11 @@
         return NULL;
     }
 
+    /*
+     * Processes the complete text of a #define directive.
+     * Extracts the macro name and its associated value,
+     * determines its type and stores it in the macro table.
+     */
     static int macro_handle_define(const char* text) {
         const char* temp = text;
 
@@ -141,10 +166,165 @@
 
         return macro_insert(key_buffer, value_buffer, type);
     }
+
+    /*
+     * Recursively expands macros contained inside another macro value.
+     * Identifiers are searched in the macro table and replaced by their
+     * values. Strings and character literals are copied without expanding
+     * their internal contents. MAX_DEPTH prevents infinite recursion.
+     */
+    static int expand_macro_value(const char* value, char* output,
+                              size_t output_size, int depth) {
+        if (depth >= MAX_DEPTH) {
+            fprintf(stderr, "Error: profundidad maxima de macros alcanzada\n");
+            return 0;
+        }
+
+        size_t i = 0;
+        size_t out_index = 0;
+
+        while (value[i] != '\0') {
+            if (value[i] == '"' || value[i] == '\'') {
+                char quote = value[i];
+
+                if (out_index + 1 >= output_size) {
+                    return 0;
+                }
+
+                output[out_index++] = value[i++];
+
+                while (value[i] != '\0') {
+
+                    if (out_index + 1 >= output_size) {
+                        return 0;
+                    }
+
+                    output[out_index++] = value[i];
+
+                    // Carácter escapado: \"  \'  \\  \n ...
+                    if (value[i] == '\\' && value[i + 1] != '\0') {
+                        i++;
+
+                        if (out_index + 1 >= output_size) {
+                            return 0;
+                        }
+
+                        output[out_index++] = value[i++];
+                        continue;
+                    }
+
+                    if (value[i] == quote) {
+                        i++;
+                        break;
+                    }
+
+                    i++;
+                }
+
+                continue;
+            }
+            if (value[i] == '_' || isalpha((unsigned char)value[i])) {
+
+                char identifier[MAX_KEY];
+                size_t id_index = 0;
+
+                while (value[i] == '_' ||
+                    isalnum((unsigned char)value[i])) {
+
+                    if (id_index < MAX_KEY - 1) {
+                        identifier[id_index++] = value[i];
+                    }
+
+                    i++;
+                }
+
+                identifier[id_index] = '\0';
+
+                const char* replacement = macro_find(identifier);
+
+                if (replacement != NULL) {
+
+                    char expanded[MAX_VALUE];
+
+                    if (!expand_macro_value(
+                            replacement,
+                            expanded,
+                            sizeof(expanded),
+                            depth + 1)) {
+                        return 0;
+                    }
+
+                    size_t length = strlen(expanded);
+
+                    if (out_index + length >= output_size) {
+                        fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                        return 0;
+                    }
+
+                    memcpy(output + out_index, expanded, length);
+                    out_index += length;
+
+                } else {
+
+                    size_t length = strlen(identifier);
+
+                    if (out_index + length >= output_size) {
+                        fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                        return 0;
+                    }
+
+                    memcpy(output + out_index, identifier, length);
+                    out_index += length;
+                }
+
+            } else {
+
+                if (out_index + 1 >= output_size) {
+                    fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                    return 0;
+                }
+
+                output[out_index++] = value[i++];
+            }
+        }
+
+        output[out_index] = '\0';
+
+        return 1;
+    }
 %}
 
-/* Estado para comentarios multilínea */
+/* State for multiline comments */
 %x COMMENT
+
+/*
+ * Rules:
+ *
+ * 1. Recognizes #define directives and sends the complete line
+ *    to macro_handle_define().
+ *
+ * 2. Recognizes string literals and copies them without attempting
+ *    to expand macros inside the string.
+ *
+ * 3. Recognizes character literals and copies them without attempting
+ *    to expand macros inside the character literal.
+ *
+ * 4. Recognizes identifiers. If the identifier corresponds to a stored
+ *    macro, its value is recursively expanded; otherwise it is copied.
+ *
+ * 5. Recognizes // comments and discards them.
+ *
+ * 6. Recognizes the beginning of a block comment and enters
+ *    the COMMENT state.
+ *
+ * 7. Recognizes the end of a block comment and returns to
+ *    the INITIAL state.
+ *
+ * 8. While inside COMMENT, newlines and other characters are discarded.
+ *
+ * 9. If EOF is reached while still inside COMMENT, an unclosed
+ *    comment lexical error is reported.
+ */
 
 %%
 ^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*[^\n]* {
@@ -163,7 +343,13 @@
     const char* value = macro_find(yytext);
 
     if (value != NULL) {
-        printf("%s", value);
+        char expanded[MAX_VALUE];
+
+        if (expand_macro_value(value, expanded, sizeof(expanded), 0)) {
+            printf("%s", expanded);
+        } else {
+            printf("%s", yytext);
+        }
     } else {
         printf("%s", yytext);
     }
@@ -182,10 +368,19 @@
 }
 %%
 
+/*
+ * Indicates to Flex that there are no additional input files
+ * after reaching the end of the current input.
+ */
 int yywrap(){
     return 1;
 }
 
+/*
+ * Opens the input file, assigns it to Flex through yyin,
+ * executes the lexical preprocessing with yylex(), closes
+ * the file and prints the macro table for verification.
+ */
 int main(){
 
     // Explanation:
