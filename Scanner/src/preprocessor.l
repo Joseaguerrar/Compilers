@@ -33,6 +33,13 @@
     static Macro macro_table[MAX_MACROS];
     static int macro_count = 0;
 
+   /*
+    * Stack of files currently being processed through #include.
+    * include_depth tracks the current nesting level.
+    */
+    static FILE* include_files[MAX_DEPTH];
+    static int include_depth = 0;
+
     /*
      * Prints all macros currently stored in the macro table.
      * Used for debugging and verification of the stored key,
@@ -165,6 +172,43 @@
         MacroType type = macro_type(value_buffer);
 
         return macro_insert(key_buffer, value_buffer, type);
+    }
+
+    /*
+    * Extracts the filename from an #include directive.
+    * Supports both "file" and <file> syntax.
+    */
+    static int include_get_filename(const char* text, char* filename, size_t size) {
+        const char* start = strchr(text, '"');
+        char end = '"';
+
+        if (start == NULL) {
+            start = strchr(text, '<');
+            end = '>';
+        }
+
+        if (start == NULL) {
+            return 0;
+        }
+
+        start++;
+
+        const char* finish = strchr(start, end);
+
+        if (finish == NULL) {
+            return 0;
+        }
+
+        size_t length = finish - start;
+
+        if (length >= size) {
+            return 0;
+        }
+
+        memcpy(filename, start, length);
+        filename[length] = '\0';
+
+        return 1;
     }
 
     /*
@@ -303,32 +347,61 @@
  * 1. Recognizes #define directives and sends the complete line
  *    to macro_handle_define().
  *
- * 2. Recognizes string literals and copies them without attempting
+ * 2. Recognizes #include directives, extracts the filename,
+ *    opens the included file and pushes a new Flex buffer so
+ *    the included file is processed recursively.
+ *
+ * 3. Recognizes string literals and copies them without attempting
  *    to expand macros inside the string.
  *
- * 3. Recognizes character literals and copies them without attempting
+ * 4. Recognizes character literals and copies them without attempting
  *    to expand macros inside the character literal.
  *
- * 4. Recognizes identifiers. If the identifier corresponds to a stored
+ * 5. Recognizes identifiers. If the identifier corresponds to a stored
  *    macro, its value is recursively expanded; otherwise it is copied.
  *
- * 5. Recognizes // comments and discards them.
+ * 6. Recognizes // comments and discards them.
  *
- * 6. Recognizes the beginning of a block comment and enters
+ * 7. Recognizes the beginning of a block comment and enters
  *    the COMMENT state.
  *
- * 7. Recognizes the end of a block comment and returns to
+ * 8. Recognizes the end of a block comment and returns to
  *    the INITIAL state.
  *
- * 8. While inside COMMENT, newlines and other characters are discarded.
+ * 9. While inside COMMENT, newlines and other characters are discarded.
  *
- * 9. If EOF is reached while still inside COMMENT, an unclosed
- *    comment lexical error is reported.
+ * 10. If EOF is reached while still inside COMMENT, an unclosed
+ *     comment lexical error is reported.
+ *
+ * 11. When EOF is reached in an included file, the current file
+ *     is closed and Flex returns to the previous input buffer.
+ *     If there are no pending includes, preprocessing finishes.
  */
 
 %%
 ^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*[^\n]* {
     macro_handle_define(yytext);
+}
+
+^[ \t]*#[ \t]*include[ \t]+(\"[^\"\n]+\"|<[^>\n]+>)[ \t]* {
+    char filename[MAX_VALUE];
+
+    if (include_get_filename(yytext, filename, sizeof(filename))) {
+        FILE* included_file = fopen(filename, "r");
+
+        if (included_file == NULL) {
+            fprintf(stderr, "Error: no se pudo abrir %s\n", filename);
+        } else if (include_depth >= MAX_DEPTH) {
+            fprintf(stderr, "Error: demasiados includes anidados\n");
+            fclose(included_file);
+        } else {
+            include_files[include_depth++] = included_file;
+
+            yypush_buffer_state(
+                yy_create_buffer(included_file, YY_BUF_SIZE)
+            );
+        }
+    }
 }
 
 \"([^\\\n]|\\.)*\"    {
@@ -365,6 +438,15 @@
 <COMMENT><<EOF>>    {
     fprintf(stderr, "Error lexico: comentario sin cerrar\n");
     return 0;
+}
+
+<INITIAL><<EOF>> {
+    if (include_depth > 0) {
+        fclose(include_files[--include_depth]);
+        yypop_buffer_state();
+    } else {
+        return 0;
+    }
 }
 %%
 
