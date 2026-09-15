@@ -497,6 +497,7 @@ char *yytext;
     #include <stdlib.h>
     #include <string.h>
     #include <ctype.h>
+    #include <unistd.h>
 
     #define MAX_MACROS 1000
     #define MAX_KEY 128
@@ -564,7 +565,7 @@ char *yytext;
         
         for (int i = 0; i < macro_count; i++) {
             if (strcmp(macro_table[i].key, key) == 0) {
-                fprintf(stderr, "Error: Macro %s ya definida", key);
+                fprintf(stderr, "Error: Macro %s ya definida\n", key);
                 preprocessor_error_count++;
                 return 0;
             }
@@ -657,9 +658,56 @@ char *yytext;
         while (*temp == ' ' || *temp == '\t') temp++;
 
         while (*temp != '\0' && value_index < MAX_VALUE - 1) {
-            value_buffer[value_index] = *temp;
-            value_index++;
-            temp++;
+
+            if (temp[0] == '/' && temp[1] == '/') {
+                break;
+            }
+
+            if (temp[0] == '/' && temp[1] == '*') {
+                temp += 2;
+
+                while (*temp != '\0' &&
+                    !(temp[0] == '*' && temp[1] == '/')) {
+                    temp++;
+                }
+
+                if (*temp != '\0') {
+                    temp += 2;
+                }
+
+                continue;
+            }
+
+            if (*temp == '"' || *temp == '\'') {
+                char quote = *temp;
+
+                value_buffer[value_index++] = *temp++;
+
+                while (*temp != '\0' && value_index < MAX_VALUE - 1) {
+                    value_buffer[value_index++] = *temp;
+
+                    if (*temp == '\\' && temp[1] != '\0') {
+                        temp++;
+
+                        if (value_index < MAX_VALUE - 1) {
+                            value_buffer[value_index++] = *temp++;
+                        }
+
+                        continue;
+                    }
+
+                    if (*temp == quote) {
+                        temp++;
+                        break;
+                    }
+
+                    temp++;
+                }
+
+                continue;
+            }
+
+            value_buffer[value_index++] = *temp++;
         }
 
         while (value_index > 0 && (value_buffer[value_index - 1] == ' '  ||
@@ -803,7 +851,7 @@ char *yytext;
                     size_t length = strlen(expanded);
 
                     if (out_index + length >= output_size) {
-                        fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                        fprintf(stderr, "Error: expansión de macro demasiado larga\n");
                         preprocessor_error_count++;
                         return 0;
                     }
@@ -816,7 +864,7 @@ char *yytext;
                     size_t length = strlen(identifier);
 
                     if (out_index + length >= output_size) {
-                        fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                        fprintf(stderr, "Error: expansión de macro demasiado larga\n");
                         preprocessor_error_count++;
                         return 0;
                     }
@@ -828,7 +876,7 @@ char *yytext;
             } else {
 
                 if (out_index + 1 >= output_size) {
-                    fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                    fprintf(stderr, "Error: expansión de macro demasiado larga\n");
                     preprocessor_error_count++;
                     return 0;
                 }
@@ -841,7 +889,7 @@ char *yytext;
 
         return 1;
     }
-#line 845 "lex.yy.c"
+#line 893 "lex.yy.c"
 /* State for multiline comments */
 
 /*
@@ -880,7 +928,7 @@ char *yytext;
  *     is closed and Flex returns to the previous input buffer.
  *     If there are no pending includes, preprocessing finishes.
  */
-#line 884 "lex.yy.c"
+#line 932 "lex.yy.c"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -1101,9 +1149,9 @@ YY_DECL
 		}
 
 	{
-#line 392 "preprocessor.l"
+#line 440 "preprocessor.l"
 
-#line 1107 "lex.yy.c"
+#line 1155 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1163,14 +1211,14 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 393 "preprocessor.l"
+#line 441 "preprocessor.l"
 {
     macro_handle_define(yytext);
 }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 397 "preprocessor.l"
+#line 445 "preprocessor.l"
 {
     char filename[MAX_VALUE];
 
@@ -1196,21 +1244,21 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 420 "preprocessor.l"
+#line 468 "preprocessor.l"
 {
-    printf("%s", yytext);
+    fprintf(yyout, "%s", yytext);
 }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 424 "preprocessor.l"
+#line 472 "preprocessor.l"
 {
-    printf("%s", yytext);
+    fprintf(yyout, "%s", yytext);
 }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 428 "preprocessor.l"
+#line 476 "preprocessor.l"
 {
     const char* value = macro_find(yytext);
 
@@ -1218,45 +1266,45 @@ YY_RULE_SETUP
         char expanded[MAX_VALUE];
 
         if (expand_macro_value(value, expanded, sizeof(expanded), 0)) {
-            printf("%s", expanded);
+            fprintf(yyout, "%s", expanded);
         } else {
-            printf("%s", yytext);
+            fprintf(yyout, "%s", yytext);
         }
     } else {
-        printf("%s", yytext);
+        fprintf(yyout, "%s", yytext);
     }
 }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 444 "preprocessor.l"
+#line 492 "preprocessor.l"
 {;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 446 "preprocessor.l"
+#line 494 "preprocessor.l"
 { BEGIN(COMMENT); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 447 "preprocessor.l"
+#line 495 "preprocessor.l"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 448 "preprocessor.l"
+#line 496 "preprocessor.l"
 {;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 449 "preprocessor.l"
+#line 497 "preprocessor.l"
 {;}
 	YY_BREAK
 case YY_STATE_EOF(COMMENT):
-#line 451 "preprocessor.l"
+#line 499 "preprocessor.l"
 {
-    fprintf(stderr, "Error lexico: comentario sin cerrar\n");
+    fprintf(stderr, "Error léxico: comentario sin cerrar\n");
     lexical_error_count++;
 
     BEGIN(INITIAL);
@@ -1270,7 +1318,7 @@ case YY_STATE_EOF(COMMENT):
 }
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
-#line 465 "preprocessor.l"
+#line 513 "preprocessor.l"
 {
     if (include_depth > 0) {
         fclose(include_files[--include_depth]);
@@ -1282,10 +1330,10 @@ case YY_STATE_EOF(INITIAL):
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 473 "preprocessor.l"
+#line 521 "preprocessor.l"
 ECHO;
 	YY_BREAK
-#line 1289 "lex.yy.c"
+#line 1337 "lex.yy.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2291,7 +2339,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 473 "preprocessor.l"
+#line 521 "preprocessor.l"
 
 
 /*
@@ -2321,19 +2369,50 @@ int main(){
     // to take input from file
     FILE *fp;
     char filename[50];
+
     printf("Enter the filename: \n");
-    scanf("%s",filename);
-    fp = fopen(filename,"r");
+    scanf("%s", filename);
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL) {
+        fprintf(stderr, "Error: no se pudo abrir %s\n", filename);
+        return 1;
+    }
+
+    char temp_filename[] = "/tmp/preprocessor_XXXXXX";
+
+    int temp_fd = mkstemp(temp_filename);
+
+    if (temp_fd == -1) {
+        fprintf(stderr, "Error: no se pudo crear archivo temporal\n");
+        fclose(fp);
+        return 1;
+    }
+
+    FILE *temp_file = fdopen(temp_fd, "w");
+
+    if (temp_file == NULL) {
+        fprintf(stderr, "Error: no se pudo abrir archivo temporal\n");
+        close(temp_fd);
+        fclose(fp);
+        return 1;
+    }
+
     yyin = fp;
+    yyout = temp_file;
 
     yylex();
-    
-    fclose(fp);
 
-    print_macros();
+    fclose(fp);
+    fclose(temp_file);
+
+    printf("Archivo temporal generado: %s\n", temp_filename);
+
+    // print_macros();
 
     printf("\nErrores lexicos: %d\n", lexical_error_count);
-printf("Errores de preprocesador: %d\n", preprocessor_error_count);
+    printf("Errores de preprocesador: %d\n", preprocessor_error_count);
 
     return 0;
 }
