@@ -526,7 +526,16 @@ char *yytext;
 
     static Macro macro_table[MAX_MACROS];
     static int macro_count = 0;
+    
+    // Counters for lexical and preprocessor errors.
+    
+    static int lexical_error_count = 0;
+    static int preprocessor_error_count = 0;
 
+   /*
+    * Stack of files currently being processed through #include.
+    * include_depth tracks the current nesting level.
+    */
     static FILE* include_files[MAX_DEPTH];
     static int include_depth = 0;
 
@@ -549,12 +558,14 @@ char *yytext;
     static int macro_insert(const char* key, const char* value, const MacroType type) {
         if (macro_count >= MAX_MACROS) {
           fprintf(stderr, "Error: tabla de macros llena\n");
+          preprocessor_error_count++;
           return 0;
       }
         
         for (int i = 0; i < macro_count; i++) {
             if (strcmp(macro_table[i].key, key) == 0) {
                 fprintf(stderr, "Error: Macro %s ya definida", key);
+                preprocessor_error_count++;
                 return 0;
             }
         }
@@ -711,6 +722,7 @@ char *yytext;
                               size_t output_size, int depth) {
         if (depth >= MAX_DEPTH) {
             fprintf(stderr, "Error: profundidad maxima de macros alcanzada\n");
+            preprocessor_error_count++;
             return 0;
         }
 
@@ -792,6 +804,7 @@ char *yytext;
 
                     if (out_index + length >= output_size) {
                         fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                        preprocessor_error_count++;
                         return 0;
                     }
 
@@ -804,6 +817,7 @@ char *yytext;
 
                     if (out_index + length >= output_size) {
                         fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                        preprocessor_error_count++;
                         return 0;
                     }
 
@@ -815,6 +829,7 @@ char *yytext;
 
                 if (out_index + 1 >= output_size) {
                     fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                    preprocessor_error_count++;
                     return 0;
                 }
 
@@ -826,7 +841,7 @@ char *yytext;
 
         return 1;
     }
-#line 830 "lex.yy.c"
+#line 845 "lex.yy.c"
 /* State for multiline comments */
 
 /*
@@ -835,29 +850,37 @@ char *yytext;
  * 1. Recognizes #define directives and sends the complete line
  *    to macro_handle_define().
  *
- * 2. Recognizes string literals and copies them without attempting
+ * 2. Recognizes #include directives, extracts the filename,
+ *    opens the included file and pushes a new Flex buffer so
+ *    the included file is processed recursively.
+ *
+ * 3. Recognizes string literals and copies them without attempting
  *    to expand macros inside the string.
  *
- * 3. Recognizes character literals and copies them without attempting
+ * 4. Recognizes character literals and copies them without attempting
  *    to expand macros inside the character literal.
  *
- * 4. Recognizes identifiers. If the identifier corresponds to a stored
+ * 5. Recognizes identifiers. If the identifier corresponds to a stored
  *    macro, its value is recursively expanded; otherwise it is copied.
  *
- * 5. Recognizes // comments and discards them.
+ * 6. Recognizes // comments and discards them.
  *
- * 6. Recognizes the beginning of a block comment and enters
+ * 7. Recognizes the beginning of a block comment and enters
  *    the COMMENT state.
  *
- * 7. Recognizes the end of a block comment and returns to
+ * 8. Recognizes the end of a block comment and returns to
  *    the INITIAL state.
  *
- * 8. While inside COMMENT, newlines and other characters are discarded.
+ * 9. While inside COMMENT, newlines and other characters are discarded.
  *
- * 9. If EOF is reached while still inside COMMENT, an unclosed
- *    comment lexical error is reported.
+ * 10. If EOF is reached while still inside COMMENT, an unclosed
+ *     comment lexical error is reported.
+ *
+ * 11. When EOF is reached in an included file, the current file
+ *     is closed and Flex returns to the previous input buffer.
+ *     If there are no pending includes, preprocessing finishes.
  */
-#line 861 "lex.yy.c"
+#line 884 "lex.yy.c"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -1078,9 +1101,9 @@ YY_DECL
 		}
 
 	{
-#line 369 "preprocessor.l"
+#line 392 "preprocessor.l"
 
-#line 1084 "lex.yy.c"
+#line 1107 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1140,14 +1163,14 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 370 "preprocessor.l"
+#line 393 "preprocessor.l"
 {
     macro_handle_define(yytext);
 }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 374 "preprocessor.l"
+#line 397 "preprocessor.l"
 {
     char filename[MAX_VALUE];
 
@@ -1156,8 +1179,10 @@ YY_RULE_SETUP
 
         if (included_file == NULL) {
             fprintf(stderr, "Error: no se pudo abrir %s\n", filename);
+            preprocessor_error_count++;
         } else if (include_depth >= MAX_DEPTH) {
             fprintf(stderr, "Error: demasiados includes anidados\n");
+            preprocessor_error_count++;
             fclose(included_file);
         } else {
             include_files[include_depth++] = included_file;
@@ -1171,21 +1196,21 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 395 "preprocessor.l"
+#line 420 "preprocessor.l"
 {
     printf("%s", yytext);
 }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 399 "preprocessor.l"
+#line 424 "preprocessor.l"
 {
     printf("%s", yytext);
 }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 403 "preprocessor.l"
+#line 428 "preprocessor.l"
 {
     const char* value = macro_find(yytext);
 
@@ -1204,39 +1229,48 @@ YY_RULE_SETUP
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 419 "preprocessor.l"
+#line 444 "preprocessor.l"
 {;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 421 "preprocessor.l"
+#line 446 "preprocessor.l"
 { BEGIN(COMMENT); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 422 "preprocessor.l"
+#line 447 "preprocessor.l"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-#line 423 "preprocessor.l"
+#line 448 "preprocessor.l"
 {;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 424 "preprocessor.l"
+#line 449 "preprocessor.l"
 {;}
 	YY_BREAK
 case YY_STATE_EOF(COMMENT):
-#line 426 "preprocessor.l"
+#line 451 "preprocessor.l"
 {
     fprintf(stderr, "Error lexico: comentario sin cerrar\n");
-    return 0;
+    lexical_error_count++;
+
+    BEGIN(INITIAL);
+
+    if (include_depth > 0) {
+        fclose(include_files[--include_depth]);
+        yypop_buffer_state();
+    } else {
+        return 0;
+    }
 }
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
-#line 431 "preprocessor.l"
+#line 465 "preprocessor.l"
 {
     if (include_depth > 0) {
         fclose(include_files[--include_depth]);
@@ -1248,10 +1282,10 @@ case YY_STATE_EOF(INITIAL):
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 439 "preprocessor.l"
+#line 473 "preprocessor.l"
 ECHO;
 	YY_BREAK
-#line 1255 "lex.yy.c"
+#line 1289 "lex.yy.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2257,7 +2291,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 439 "preprocessor.l"
+#line 473 "preprocessor.l"
 
 
 /*
@@ -2297,6 +2331,9 @@ int main(){
     fclose(fp);
 
     print_macros();
+
+    printf("\nErrores lexicos: %d\n", lexical_error_count);
+printf("Errores de preprocesador: %d\n", preprocessor_error_count);
 
     return 0;
 }
