@@ -2,3 +2,4 @@ MicroCompiler/microc
 MicroCompiler/program_mostro_binary
 MicroCompiler/tests/*.s
 MicroCompiler/obj
+Scanner/src/preprocessor
