@@ -71,7 +71,7 @@
         
         for (int i = 0; i < macro_count; i++) {
             if (strcmp(macro_table[i].key, key) == 0) {
-                fprintf(stderr, "Error: Macro %s ya definida", key);
+                fprintf(stderr, "Error: Macro %s ya definida\n", key);
                 preprocessor_error_count++;
                 return 0;
             }
@@ -164,9 +164,56 @@
         while (*temp == ' ' || *temp == '\t') temp++;
 
         while (*temp != '\0' && value_index < MAX_VALUE - 1) {
-            value_buffer[value_index] = *temp;
-            value_index++;
-            temp++;
+
+            if (temp[0] == '/' && temp[1] == '/') {
+                break;
+            }
+
+            if (temp[0] == '/' && temp[1] == '*') {
+                temp += 2;
+
+                while (*temp != '\0' &&
+                    !(temp[0] == '*' && temp[1] == '/')) {
+                    temp++;
+                }
+
+                if (*temp != '\0') {
+                    temp += 2;
+                }
+
+                continue;
+            }
+
+            if (*temp == '"' || *temp == '\'') {
+                char quote = *temp;
+
+                value_buffer[value_index++] = *temp++;
+
+                while (*temp != '\0' && value_index < MAX_VALUE - 1) {
+                    value_buffer[value_index++] = *temp;
+
+                    if (*temp == '\\' && temp[1] != '\0') {
+                        temp++;
+
+                        if (value_index < MAX_VALUE - 1) {
+                            value_buffer[value_index++] = *temp++;
+                        }
+
+                        continue;
+                    }
+
+                    if (*temp == quote) {
+                        temp++;
+                        break;
+                    }
+
+                    temp++;
+                }
+
+                continue;
+            }
+
+            value_buffer[value_index++] = *temp++;
         }
 
         while (value_index > 0 && (value_buffer[value_index - 1] == ' '  ||
@@ -419,11 +466,11 @@
 }
 
 \"([^\\\n]|\\.)*\"    {
-    printf("%s", yytext);
+    fprintf(yyout, "%s", yytext);
 }
 
 \'([^\\'\n]|\\.)+\' {
-    printf("%s", yytext);
+    fprintf(yyout, "%s", yytext);
 }
 
 [A-Za-z_][A-Za-z0-9_]* {
@@ -433,12 +480,12 @@
         char expanded[MAX_VALUE];
 
         if (expand_macro_value(value, expanded, sizeof(expanded), 0)) {
-            printf("%s", expanded);
+            fprintf(yyout, "%s", expanded);
         } else {
-            printf("%s", yytext);
+            fprintf(yyout, "%s", yytext);
         }
     } else {
-        printf("%s", yytext);
+        fprintf(yyout, "%s", yytext);
     }
 }
 
@@ -500,19 +547,50 @@ int main(){
     // to take input from file
     FILE *fp;
     char filename[50];
+
     printf("Enter the filename: \n");
-    scanf("%s",filename);
-    fp = fopen(filename,"r");
+    scanf("%s", filename);
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL) {
+        fprintf(stderr, "Error: no se pudo abrir %s\n", filename);
+        return 1;
+    }
+
+    char temp_filename[] = "/tmp/preprocessor_XXXXXX";
+
+    int temp_fd = mkstemp(temp_filename);
+
+    if (temp_fd == -1) {
+        fprintf(stderr, "Error: no se pudo crear archivo temporal\n");
+        fclose(fp);
+        return 1;
+    }
+
+    FILE *temp_file = fdopen(temp_fd, "w");
+
+    if (temp_file == NULL) {
+        fprintf(stderr, "Error: no se pudo abrir archivo temporal\n");
+        close(temp_fd);
+        fclose(fp);
+        return 1;
+    }
+
     yyin = fp;
+    yyout = temp_file;
 
     yylex();
-    
+
     fclose(fp);
+    fclose(temp_file);
 
-    print_macros();
+    printf("Archivo temporal generado: %s\n", temp_filename);
 
-    printf("\nErrores léxicos: %d\n", lexical_error_count);
-printf("Errores de preprocesador: %d\n", preprocessor_error_count);
+    // print_macros();
+
+    printf("\nErrores lexicos: %d\n", lexical_error_count);
+    printf("Errores de preprocesador: %d\n", preprocessor_error_count);
 
     return 0;
 }
