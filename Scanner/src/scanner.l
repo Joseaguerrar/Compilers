@@ -19,6 +19,7 @@ static int set_token(TokenType type, TokenCategory cat) {
 %}
 
 %option noyywrap
+%option nounput noinput
 
 /* regex for literals & numbers */
 DIGIT       [0-9]
