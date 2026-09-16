@@ -353,22 +353,35 @@
             }
             if (value[i] == '_' || isalpha((unsigned char)value[i])) {
 
-                char identifier[MAX_KEY];
-                size_t id_index = 0;
+                /*
+                * Save the beginning of the identifier and advance
+                * until the complete identifier has been read.
+                */
+                size_t id_start = i;
 
                 while (value[i] == '_' ||
                     isalnum((unsigned char)value[i])) {
-
-                    if (id_index < MAX_KEY - 1) {
-                        identifier[id_index++] = value[i];
-                    }
-
                     i++;
                 }
 
-                identifier[id_index] = '\0';
+                size_t id_length = i - id_start;
 
-                const char* replacement = macro_find(identifier);
+                /*
+                * Allocate exactly enough memory for the identifier.
+                */
+                char *identifier = malloc(id_length + 1);
+
+                if (identifier == NULL) {
+                    fprintf(stderr,
+                            "Error: no se pudo reservar memoria para el identificador\n");
+                    preprocessor_error_count++;
+                    return 0;
+                }
+
+                memcpy(identifier, value + id_start, id_length);
+                identifier[id_length] = '\0';
+
+                const char *replacement = macro_find(identifier);
 
                 if (replacement != NULL) {
 
@@ -379,14 +392,19 @@
                             expanded,
                             sizeof(expanded),
                             depth + 1)) {
+
+                        free(identifier);
                         return 0;
                     }
 
                     size_t length = strlen(expanded);
 
                     if (out_index + length >= output_size) {
-                        fprintf(stderr, "Error: expansión de macro demasiado larga\n");
+                        fprintf(stderr,
+                                "Error: expansión de macro demasiado larga\n");
+
                         preprocessor_error_count++;
+                        free(identifier);
                         return 0;
                     }
 
@@ -395,22 +413,27 @@
 
                 } else {
 
-                    size_t length = strlen(identifier);
+                    if (out_index + id_length >= output_size) {
+                        fprintf(stderr,
+                                "Error: expansión de macro demasiado larga\n");
 
-                    if (out_index + length >= output_size) {
-                        fprintf(stderr, "Error: expansión de macro demasiado larga\n");
                         preprocessor_error_count++;
+                        free(identifier);
                         return 0;
                     }
 
-                    memcpy(output + out_index, identifier, length);
-                    out_index += length;
+                    memcpy(output + out_index, identifier, id_length);
+                    out_index += id_length;
                 }
+
+                free(identifier);
 
             } else {
 
                 if (out_index + 1 >= output_size) {
-                    fprintf(stderr, "Error: expansión de macro demasiado larga\n");
+                    fprintf(stderr,
+                            "Error: expansión de macro demasiado larga\n");
+
                     preprocessor_error_count++;
                     return 0;
                 }
@@ -429,39 +452,74 @@
 %x COMMENT INCLUDE
 
 /*
- * Rules:
+ * Preprocessor lexical rules:
  *
- * 1. Recognizes #define directives and sends the complete line
- *    to macro_handle_define().
+ * 1. Recognizes #define directives containing a block comment
+ *    on the same line and sends the complete directive to
+ *    macro_handle_define().
  *
- * 2. Recognizes #include directives, extracts the filename,
- *    opens the included file and pushes a new Flex buffer so
- *    the included file is processed recursively.
+ * 2. Recognizes regular #define directives and sends the
+ *    complete line to macro_handle_define().
  *
- * 3. Recognizes string literals and copies them without attempting
- *    to expand macros inside the string.
+ * 3. Detects an incomplete #include directive followed by
+ *    a newline and reports a preprocessor error.
  *
- * 4. Recognizes character literals and copies them without attempting
- *    to expand macros inside the character literal.
+ * 4. Recognizes an #include directive immediately followed
+ *    by a block comment and enters the COMMENT state.
  *
- * 5. Recognizes identifiers. If the identifier corresponds to a stored
- *    macro, its value is recursively expanded; otherwise it is copied.
+ * 5. Recognizes an #include directive followed by whitespace
+ *    and enters the INCLUDE state.
  *
- * 6. Recognizes // comments and discards them.
+ * 6. Acts as a fallback for #include directives without
+ *    whitespace, including cases such as #include"file.h",
+ *    #include<file.h>, or #include followed directly by EOF.
  *
- * 7. Recognizes the beginning of a block comment and enters
- *    the COMMENT state.
+ * 7. Ignores whitespace while processing an #include directive.
  *
- * 8. Recognizes the end of a block comment and returns to
- *    the INITIAL state.
+ * 8. Detects a newline while still waiting for an include
+ *    filename and reports an incomplete #include directive.
  *
- * 9. While inside COMMENT, newlines and other characters are discarded.
+ * 9. Recognizes a block comment while processing an #include
+ *    directive and temporarily enters the COMMENT state.
  *
- * 10. If EOF is reached while still inside COMMENT, an unclosed
- *     comment lexical error is reported.
+ * 10. Recognizes the filename of an #include directive,
+ *     opens the file, and pushes a new Flex buffer so that
+ *     the included file is processed recursively.
  *
- * 11. When EOF is reached in an included file, the current file
- *     is closed and Flex returns to the previous input buffer.
+ * 11. Recognizes string literals and copies them to the
+ *     output without expanding macros inside them.
+ *
+ * 12. Recognizes character literals and copies them to the
+ *     output without expanding macros inside them.
+ *
+ * 13. Recognizes identifiers. If an identifier corresponds
+ *     to a defined macro, its value is recursively expanded;
+ *     otherwise, the identifier is copied unchanged.
+ *
+ * 14. Recognizes // comments and discards their contents.
+ *
+ * 15. Recognizes the beginning of a block comment in normal
+ *     source code, writes whitespace to prevent adjacent
+ *     tokens from joining, and enters the COMMENT state.
+ *
+ * 16. Recognizes the end of a block comment and returns to
+ *     the lexical state active before the comment began.
+ *
+ * 17. Preserves newline characters contained in block comments
+ *     when the comment originated in normal source code.
+ *
+ * 18. Discards all other characters while inside a block comment.
+ *
+ * 19. Detects EOF while inside a block comment, reports an
+ *     unclosed-comment lexical error, and returns to the
+ *     parent included file when necessary.
+ *
+ * 20. Detects EOF while waiting for an #include filename,
+ *     reports an incomplete-directive error, and returns to
+ *     the parent included file when necessary.
+ *
+ * 21. Handles normal EOF. If the current file was included,
+ *     it closes that file and restores the previous Flex buffer.
  *     If there are no pending includes, preprocessing finishes.
  */
 
@@ -488,7 +546,28 @@
     BEGIN(INCLUDE);
 }
 
+    /*
+    * Fallback for cases such as:
+    *
+    * #include
+    *
+    * followed immediately by EOF.
+    *
+    * It also allows forms such as:
+    * #include"file.h"
+    * #include<file.h>
+    */
+^[ \t]*#[ \t]*include {
+    BEGIN(INCLUDE);
+}
+
 <INCLUDE>[ \t]+ {;}
+
+<INCLUDE>\n {
+    fprintf(stderr, "Error: directiva include incompleta\n");
+    preprocessor_error_count++;
+    BEGIN(INITIAL);
+}
 
 <INCLUDE>"/*" {
     comment_return_state = YY_START;
@@ -546,16 +625,35 @@
 
 "//"[^\n]*          {;}
 
-"/*" {
+"/\*" {
     comment_return_state = YY_START;
+
+    /*
+     * A block comment behaves as whitespace.
+     * This prevents tokens around the comment from
+     * being joined together.
+     */
+    fputc(' ', yyout);
+
     BEGIN(COMMENT);
 }
 
 <COMMENT>"*/" {
     BEGIN(comment_return_state);
 }
-<COMMENT>\n         {;}
-<COMMENT>.          {;}
+<COMMENT>\n {
+    /*
+     * Preserve newlines only when the comment came from
+     * normal source code.
+     *
+     * Comments inside an #include directive must not be
+     * copied to the preprocessed output.
+     */
+    if (comment_return_state == INITIAL) {
+        fputc('\n', yyout);
+    }
+}
+<COMMENT>. {;}
 
 <COMMENT><<EOF>> {
     fprintf(stderr, "Error léxico: comentario sin cerrar\n");
@@ -567,6 +665,27 @@
         fclose(include_files[--include_depth]);
         yypop_buffer_state();
     } else {
+        return 0;
+    }
+}
+
+<INCLUDE><<EOF>> {
+    fprintf(stderr, "Error: directiva include incompleta\n");
+    preprocessor_error_count++;
+
+    BEGIN(INITIAL);
+
+    /*
+     * If the malformed #include was inside an included file,
+     * close it and continue with its parent.
+     */
+    if (include_depth > 0) {
+
+        fclose(include_files[--include_depth]);
+        yypop_buffer_state();
+
+    } else {
+
         return 0;
     }
 }
