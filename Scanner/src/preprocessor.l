@@ -3,6 +3,7 @@
     #include <stdlib.h>
     #include <string.h>
     #include <ctype.h>
+    #include <unistd.h>
 
     #define MAX_MACROS 1000
     #define MAX_KEY 128
@@ -32,6 +33,14 @@
 
     static Macro macro_table[MAX_MACROS];
     static int macro_count = 0;
+    
+    // Counters for lexical and preprocessor errors.
+    
+    static int lexical_error_count = 0;
+    static int preprocessor_error_count = 0;
+
+    // State variable to track whether we are inside a comment or not.
+    static int comment_return_state = 0;
 
    /*
     * Stack of files currently being processed through #include.
@@ -59,12 +68,14 @@
     static int macro_insert(const char* key, const char* value, const MacroType type) {
         if (macro_count >= MAX_MACROS) {
           fprintf(stderr, "Error: tabla de macros llena\n");
+          preprocessor_error_count++;
           return 0;
       }
         
         for (int i = 0; i < macro_count; i++) {
             if (strcmp(macro_table[i].key, key) == 0) {
-                fprintf(stderr, "Error: Macro %s ya definida", key);
+                fprintf(stderr, "Error: Macro %s ya definida\n", key);
+                preprocessor_error_count++;
                 return 0;
             }
         }
@@ -121,18 +132,15 @@
         return NULL;
     }
 
-    /*
-     * Processes the complete text of a #define directive.
-     * Extracts the macro name and its associated value,
-     * determines its type and stores it in the macro table.
-     */
+        /*
+    * Processes the complete text of a #define directive.
+    * Extracts the macro name and its associated value,
+    * determines its type and stores it in the macro table.
+    */
     static int macro_handle_define(const char* text) {
         const char* temp = text;
 
-        char key_buffer[MAX_KEY];
         char value_buffer[MAX_VALUE];
-
-        int key_index = 0;
         int value_index = 0;
 
         while (*temp == ' ' || *temp == '\t') temp++;
@@ -145,25 +153,96 @@
 
         while (*temp == ' ' || *temp == '\t') temp++;
 
+        /*
+        * Save where the macro name begins and advance until
+        * the complete identifier has been read.
+        */
+        const char* key_start = temp;
+
         while (*temp == '_' || isalnum((unsigned char)*temp)) {
-            key_buffer[key_index] = *temp;
-            key_index++;
             temp++;
         }
 
-        key_buffer[key_index] = '\0';
+        size_t key_length = (size_t)(temp - key_start);
+
+        /*
+        * Allocate exactly enough memory for the macro name.
+        */
+        char* key_buffer = malloc(key_length + 1);
+
+        if (key_buffer == NULL) {
+            fprintf(stderr, "Error: no se pudo reservar memoria para el macro\n");
+            preprocessor_error_count++;
+            return 0;
+        }
+
+        memcpy(key_buffer, key_start, key_length);
+        key_buffer[key_length] = '\0';
 
         while (*temp == ' ' || *temp == '\t') temp++;
 
         while (*temp != '\0' && value_index < MAX_VALUE - 1) {
-            value_buffer[value_index] = *temp;
-            value_index++;
-            temp++;
+
+            if (temp[0] == '/' && temp[1] == '*') {
+                temp += 2;
+
+                while (*temp != '\0' &&
+                    !(temp[0] == '*' && temp[1] == '/')) {
+                    temp++;
+                }
+
+                if (*temp != '\0') {
+                    temp += 2;
+                }
+
+                /* A comment in C behaves like whitespace */
+                if (value_index > 0 &&
+                    value_index < MAX_VALUE - 1 &&
+                    value_buffer[value_index - 1] != ' ') {
+
+                    value_buffer[value_index++] = ' ';
+                }
+
+                continue;
+            }
+
+            if (*temp == '"' || *temp == '\'') {
+                char quote = *temp;
+
+                value_buffer[value_index++] = *temp++;
+
+                while (*temp != '\0' && value_index < MAX_VALUE - 1) {
+                    value_buffer[value_index++] = *temp;
+
+                    if (*temp == '\\' && temp[1] != '\0') {
+                        temp++;
+
+                        if (value_index < MAX_VALUE - 1) {
+                            value_buffer[value_index++] = *temp++;
+                        }
+
+                        continue;
+                    }
+
+                    if (*temp == quote) {
+                        temp++;
+                        break;
+                    }
+
+                    temp++;
+                }
+
+                continue;
+            }
+
+            value_buffer[value_index++] = *temp++;
         }
 
-        while (value_index > 0 && (value_buffer[value_index - 1] == ' '  ||
-                                   value_buffer[value_index - 1] == '\t' ||
-                                   value_buffer[value_index - 1] == '\r')) {
+        while (value_index > 0 &&
+            (value_buffer[value_index - 1] == ' '  ||
+                value_buffer[value_index - 1] == '\t' ||
+                value_buffer[value_index - 1] == '\r')) {
+
             value_index--;
         }
 
@@ -171,7 +250,11 @@
 
         MacroType type = macro_type(value_buffer);
 
-        return macro_insert(key_buffer, value_buffer, type);
+        int result = macro_insert(key_buffer, value_buffer, type);
+
+        free(key_buffer);
+
+        return result;
     }
 
     /*
@@ -221,6 +304,7 @@
                               size_t output_size, int depth) {
         if (depth >= MAX_DEPTH) {
             fprintf(stderr, "Error: profundidad maxima de macros alcanzada\n");
+            preprocessor_error_count++;
             return 0;
         }
 
@@ -301,7 +385,8 @@
                     size_t length = strlen(expanded);
 
                     if (out_index + length >= output_size) {
-                        fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                        fprintf(stderr, "Error: expansión de macro demasiado larga\n");
+                        preprocessor_error_count++;
                         return 0;
                     }
 
@@ -313,7 +398,8 @@
                     size_t length = strlen(identifier);
 
                     if (out_index + length >= output_size) {
-                        fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                        fprintf(stderr, "Error: expansión de macro demasiado larga\n");
+                        preprocessor_error_count++;
                         return 0;
                     }
 
@@ -324,7 +410,8 @@
             } else {
 
                 if (out_index + 1 >= output_size) {
-                    fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+                    fprintf(stderr, "Error: expansión de macro demasiado larga\n");
+                    preprocessor_error_count++;
                     return 0;
                 }
 
@@ -339,7 +426,7 @@
 %}
 
 /* State for multiline comments */
-%x COMMENT
+%x COMMENT INCLUDE
 
 /*
  * Rules:
@@ -379,11 +466,36 @@
  */
 
 %%
+^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*[^\n]*"/*"([^*]|\*+[^*/])*\*+"/"[^\n]* {
+    macro_handle_define(yytext);
+}
+
 ^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*[^\n]* {
     macro_handle_define(yytext);
 }
 
-^[ \t]*#[ \t]*include[ \t]+(\"[^\"\n]+\"|<[^>\n]+>)[ \t]* {
+^[ \t]*#[ \t]*include[ \t]*\n {
+    fprintf(stderr, "Error: directiva include incompleta\n");
+    preprocessor_error_count++;
+}
+
+^[ \t]*#[ \t]*include"/*" {
+    comment_return_state = INCLUDE;
+    BEGIN(COMMENT);
+}
+
+^[ \t]*#[ \t]*include[ \t]+ {
+    BEGIN(INCLUDE);
+}
+
+<INCLUDE>[ \t]+ {;}
+
+<INCLUDE>"/*" {
+    comment_return_state = YY_START;
+    BEGIN(COMMENT);
+}
+
+<INCLUDE>(\"[^\"\n]+\"|<[^>\n]+>) {
     char filename[MAX_VALUE];
 
     if (include_get_filename(yytext, filename, sizeof(filename))) {
@@ -391,8 +503,10 @@
 
         if (included_file == NULL) {
             fprintf(stderr, "Error: no se pudo abrir %s\n", filename);
+            preprocessor_error_count++;
         } else if (include_depth >= MAX_DEPTH) {
             fprintf(stderr, "Error: demasiados includes anidados\n");
+            preprocessor_error_count++;
             fclose(included_file);
         } else {
             include_files[include_depth++] = included_file;
@@ -402,14 +516,16 @@
             );
         }
     }
+
+    BEGIN(INITIAL);
 }
 
-\"([^\\\n]|\\.)*\"    {
-    printf("%s", yytext);
+\"([^\\\n]|\\.)*\" {
+    fprintf(yyout, "%s", yytext);
 }
 
 \'([^\\'\n]|\\.)+\' {
-    printf("%s", yytext);
+    fprintf(yyout, "%s", yytext);
 }
 
 [A-Za-z_][A-Za-z0-9_]* {
@@ -419,25 +535,40 @@
         char expanded[MAX_VALUE];
 
         if (expand_macro_value(value, expanded, sizeof(expanded), 0)) {
-            printf("%s", expanded);
+            fprintf(yyout, "%s", expanded);
         } else {
-            printf("%s", yytext);
+            fprintf(yyout, "%s", yytext);
         }
     } else {
-        printf("%s", yytext);
+        fprintf(yyout, "%s", yytext);
     }
 }
 
 "//"[^\n]*          {;}
 
-"/*"                { BEGIN(COMMENT); }
-<COMMENT>"*/"       { BEGIN(INITIAL); }
+"/*" {
+    comment_return_state = YY_START;
+    BEGIN(COMMENT);
+}
+
+<COMMENT>"*/" {
+    BEGIN(comment_return_state);
+}
 <COMMENT>\n         {;}
 <COMMENT>.          {;}
 
-<COMMENT><<EOF>>    {
-    fprintf(stderr, "Error lexico: comentario sin cerrar\n");
-    return 0;
+<COMMENT><<EOF>> {
+    fprintf(stderr, "Error léxico: comentario sin cerrar\n");
+    lexical_error_count++;
+
+    BEGIN(INITIAL);
+
+    if (include_depth > 0) {
+        fclose(include_files[--include_depth]);
+        yypop_buffer_state();
+    } else {
+        return 0;
+    }
 }
 
 <INITIAL><<EOF>> {
@@ -463,7 +594,7 @@ int yywrap(){
  * executes the lexical preprocessing with yylex(), closes
  * the file and prints the macro table for verification.
  */
-int main(){
+int main(int argc, char *argv[]){
 
     // Explanation:
     // yywrap() - wraps the above rule section
@@ -475,18 +606,48 @@ int main(){
 
     // Uncomment the lines below 
     // to take input from file
-    FILE *fp;
-    char filename[50];
-    printf("Enter the filename: \n");
-    scanf("%s",filename);
-    fp = fopen(filename,"r");
+    if (argc != 2) {
+        fprintf(stderr, "Uso: %s <archivo.c>\n", argv[0]);
+        return 1;
+    }
+
+    FILE *fp = fopen(argv[1], "r");
+
+    if (fp == NULL) {
+        fprintf(stderr, "Error: no se pudo abrir %s\n", argv[1]);
+        return 1;
+    }
+
+    char temp_filename[] = "/tmp/preprocessor_XXXXXX";
+
+    int temp_fd = mkstemp(temp_filename);
+
+    if (temp_fd == -1) {
+        fprintf(stderr, "Error: no se pudo crear el archivo temporal\n");
+        fclose(fp);
+        return 1;
+    }
+
+    FILE *temp_file = fdopen(temp_fd, "w");
+
+    if (temp_file == NULL) {
+        fprintf(stderr, "Error: no se pudo abrir el archivo temporal\n");
+        close(temp_fd);
+        fclose(fp);
+        return 1;
+    }
+
     yyin = fp;
+    yyout = temp_file;
 
     yylex();
-    
-    fclose(fp);
 
-    print_macros();
+    fclose(fp);
+    fclose(temp_file);
+
+    printf("Archivo temporal generado: %s\n", temp_filename);
+    printf("Errores lexicos: %d\n", lexical_error_count);
+    printf("Errores de preprocesador: %d\n", preprocessor_error_count);
 
     return 0;
 }

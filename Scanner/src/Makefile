@@ -30,3 +30,6 @@ all:
 # 	rm -f $(TARGET) $(OBJS) $(LEX_C) lex.yy.c preprocessor
 
 # .PHONY: all clean
+
+clean:
+	rm -f preprocessor
