@@ -39,6 +39,9 @@
     static int lexical_error_count = 0;
     static int preprocessor_error_count = 0;
 
+    // State variable to track whether we are inside a comment or not.
+    static int comment_return_state = 0;
+
    /*
     * Stack of files currently being processed through #include.
     * include_depth tracks the current nesting level.
@@ -165,10 +168,6 @@
 
         while (*temp != '\0' && value_index < MAX_VALUE - 1) {
 
-            if (temp[0] == '/' && temp[1] == '/') {
-                break;
-            }
-
             if (temp[0] == '/' && temp[1] == '*') {
                 temp += 2;
 
@@ -179,6 +178,13 @@
 
                 if (*temp != '\0') {
                     temp += 2;
+                }
+
+                /* Un comentario en C funciona como espacio */
+                if (value_index > 0 &&
+                    value_index < MAX_VALUE - 1 &&
+                    value_buffer[value_index - 1] != ' ') {
+                    value_buffer[value_index++] = ' ';
                 }
 
                 continue;
@@ -398,7 +404,7 @@
 %}
 
 /* State for multiline comments */
-%x COMMENT
+%x COMMENT INCLUDE
 
 /*
  * Rules:
@@ -438,11 +444,31 @@
  */
 
 %%
+^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*[^\n]*"/*"([^*]|\*+[^*/])*\*+"/"[^\n]* {
+    macro_handle_define(yytext);
+}
+
 ^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*[^\n]* {
     macro_handle_define(yytext);
 }
 
-^[ \t]*#[ \t]*include[ \t]+(\"[^\"\n]+\"|<[^>\n]+>)[ \t]* {
+^[ \t]*#[ \t]*include"/*" {
+    comment_return_state = INCLUDE;
+    BEGIN(COMMENT);
+}
+
+^[ \t]*#[ \t]*include[ \t]+ {
+    BEGIN(INCLUDE);
+}
+
+<INCLUDE>[ \t]+ {;}
+
+<INCLUDE>"/*" {
+    comment_return_state = YY_START;
+    BEGIN(COMMENT);
+}
+
+<INCLUDE>(\"[^\"\n]+\"|<[^>\n]+>) {
     char filename[MAX_VALUE];
 
     if (include_get_filename(yytext, filename, sizeof(filename))) {
@@ -463,9 +489,11 @@
             );
         }
     }
+
+    BEGIN(INITIAL);
 }
 
-\"([^\\\n]|\\.)*\"    {
+\"([^\\\n]|\\.)*\" {
     fprintf(yyout, "%s", yytext);
 }
 
@@ -491,8 +519,14 @@
 
 "//"[^\n]*          {;}
 
-"/*"                { BEGIN(COMMENT); }
-<COMMENT>"*/"       { BEGIN(INITIAL); }
+"/*" {
+    comment_return_state = YY_START;
+    BEGIN(COMMENT);
+}
+
+<COMMENT>"*/" {
+    BEGIN(comment_return_state);
+}
 <COMMENT>\n         {;}
 <COMMENT>.          {;}
 
@@ -533,7 +567,7 @@ int yywrap(){
  * executes the lexical preprocessing with yylex(), closes
  * the file and prints the macro table for verification.
  */
-int main(){
+int main(int argc, char *argv[]){
 
     // Explanation:
     // yywrap() - wraps the above rule section
@@ -545,16 +579,15 @@ int main(){
 
     // Uncomment the lines below 
     // to take input from file
-    FILE *fp;
-    char filename[50];
+    if (argc != 2) {
+        fprintf(stderr, "Uso: %s <archivo.c>\n", argv[0]);
+        return 1;
+    }
 
-    printf("Enter the filename: \n");
-    scanf("%s", filename);
-
-    fp = fopen(filename, "r");
+    FILE *fp = fopen(argv[1], "r");
 
     if (fp == NULL) {
-        fprintf(stderr, "Error: no se pudo abrir %s\n", filename);
+        fprintf(stderr, "Error: no se pudo abrir %s\n", argv[1]);
         return 1;
     }
 
@@ -563,7 +596,7 @@ int main(){
     int temp_fd = mkstemp(temp_filename);
 
     if (temp_fd == -1) {
-        fprintf(stderr, "Error: no se pudo crear archivo temporal\n");
+        fprintf(stderr, "Error: no se pudo crear el archivo temporal\n");
         fclose(fp);
         return 1;
     }
@@ -571,7 +604,7 @@ int main(){
     FILE *temp_file = fdopen(temp_fd, "w");
 
     if (temp_file == NULL) {
-        fprintf(stderr, "Error: no se pudo abrir archivo temporal\n");
+        fprintf(stderr, "Error: no se pudo abrir el archivo temporal\n");
         close(temp_fd);
         fclose(fp);
         return 1;
@@ -586,10 +619,7 @@ int main(){
     fclose(temp_file);
 
     printf("Archivo temporal generado: %s\n", temp_filename);
-
-    // print_macros();
-
-    printf("\nErrores lexicos: %d\n", lexical_error_count);
+    printf("Errores lexicos: %d\n", lexical_error_count);
     printf("Errores de preprocesador: %d\n", preprocessor_error_count);
 
     return 0;
