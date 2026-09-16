@@ -3,3 +3,4 @@ MicroCompiler/program_mostro_binary
 MicroCompiler/tests/*.s
 MicroCompiler/obj
 Scanner/src/preprocessor
+Scanner/src/lex.yy.c
