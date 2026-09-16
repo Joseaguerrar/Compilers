@@ -1,6 +1,12 @@
+# MicroCompiler
 MicroCompiler/microc
 MicroCompiler/program_mostro_binary
 MicroCompiler/tests/*.s
 MicroCompiler/obj
-Scanner/src/preprocessor
+
+# Scanner (archivos generados por Flex, objetos y binarios)
 Scanner/src/lex.yy.c
+Scanner/src/*.lex.c
+Scanner/src/*.o
+Scanner/src/preprocessor
+Scanner/src/test_scanner
