@@ -132,18 +132,15 @@
         return NULL;
     }
 
-    /*
-     * Processes the complete text of a #define directive.
-     * Extracts the macro name and its associated value,
-     * determines its type and stores it in the macro table.
-     */
+        /*
+    * Processes the complete text of a #define directive.
+    * Extracts the macro name and its associated value,
+    * determines its type and stores it in the macro table.
+    */
     static int macro_handle_define(const char* text) {
         const char* temp = text;
 
-        char key_buffer[MAX_KEY];
         char value_buffer[MAX_VALUE];
-
-        int key_index = 0;
         int value_index = 0;
 
         while (*temp == ' ' || *temp == '\t') temp++;
@@ -156,13 +153,31 @@
 
         while (*temp == ' ' || *temp == '\t') temp++;
 
+        /*
+        * Save where the macro name begins and advance until
+        * the complete identifier has been read.
+        */
+        const char* key_start = temp;
+
         while (*temp == '_' || isalnum((unsigned char)*temp)) {
-            key_buffer[key_index] = *temp;
-            key_index++;
             temp++;
         }
 
-        key_buffer[key_index] = '\0';
+        size_t key_length = (size_t)(temp - key_start);
+
+        /*
+        * Allocate exactly enough memory for the macro name.
+        */
+        char* key_buffer = malloc(key_length + 1);
+
+        if (key_buffer == NULL) {
+            fprintf(stderr, "Error: no se pudo reservar memoria para el macro\n");
+            preprocessor_error_count++;
+            return 0;
+        }
+
+        memcpy(key_buffer, key_start, key_length);
+        key_buffer[key_length] = '\0';
 
         while (*temp == ' ' || *temp == '\t') temp++;
 
@@ -180,10 +195,11 @@
                     temp += 2;
                 }
 
-                /* Un comentario en C funciona como espacio */
+                /* A comment in C behaves like whitespace */
                 if (value_index > 0 &&
                     value_index < MAX_VALUE - 1 &&
                     value_buffer[value_index - 1] != ' ') {
+
                     value_buffer[value_index++] = ' ';
                 }
 
@@ -222,9 +238,11 @@
             value_buffer[value_index++] = *temp++;
         }
 
-        while (value_index > 0 && (value_buffer[value_index - 1] == ' '  ||
-                                   value_buffer[value_index - 1] == '\t' ||
-                                   value_buffer[value_index - 1] == '\r')) {
+        while (value_index > 0 &&
+            (value_buffer[value_index - 1] == ' '  ||
+                value_buffer[value_index - 1] == '\t' ||
+                value_buffer[value_index - 1] == '\r')) {
+
             value_index--;
         }
 
@@ -232,7 +250,11 @@
 
         MacroType type = macro_type(value_buffer);
 
-        return macro_insert(key_buffer, value_buffer, type);
+        int result = macro_insert(key_buffer, value_buffer, type);
+
+        free(key_buffer);
+
+        return result;
     }
 
     /*
@@ -450,6 +472,11 @@
 
 ^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*[^\n]* {
     macro_handle_define(yytext);
+}
+
+^[ \t]*#[ \t]*include[ \t]*\n {
+    fprintf(stderr, "Error: directiva include incompleta\n");
+    preprocessor_error_count++;
 }
 
 ^[ \t]*#[ \t]*include"/*" {
