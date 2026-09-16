@@ -1,5 +1,5 @@
 
-#line 3 "lex.yy.c"
+#line 2 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -960,7 +960,7 @@ char *yytext;
 
         return 1;
     }
-#line 964 "lex.yy.c"
+#line 963 "lex.yy.c"
 /* State for multiline comments */
 
 /*
@@ -999,7 +999,7 @@ char *yytext;
  *     is closed and Flex returns to the previous input buffer.
  *     If there are no pending includes, preprocessing finishes.
  */
-#line 1003 "lex.yy.c"
+#line 1002 "lex.yy.c"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -1223,7 +1223,7 @@ YY_DECL
 	{
 #line 468 "preprocessor.l"
 
-#line 1227 "lex.yy.c"
+#line 1226 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1457,7 +1457,7 @@ YY_RULE_SETUP
 #line 582 "preprocessor.l"
 ECHO;
 	YY_BREAK
-#line 1461 "lex.yy.c"
+#line 1460 "lex.yy.c"
 case YY_STATE_EOF(INCLUDE):
 	yyterminate();
 

@@ -1,35 +1,20 @@
-all:
-	flex preprocessor.l
-	gcc lex.yy.c -o preprocessor
-	./preprocessor
+CC = gcc
+CFLAGS = -Wall -Wextra -g
+FLEX = flex
 
-# FUTURE MAKE FILE
-# CC = gcc
-# CFLAGS = -Wall -Wextra -g
-# FLEX = flex
+all: preprocessor test_scanner
 
-# TARGET = test_scanner
+preprocessor: preprocessor.l
+	$(FLEX) -o preprocessor.lex.c preprocessor.l
+	$(CC) $(CFLAGS) preprocessor.lex.c -o preprocessor
 
-# LEX_SRC = scanner.l
-# LEX_C = scanner.lex.c
-# C_SRCS = scanner.c test_scanner.c $(LEX_C)
-# OBJS = scanner.o test_scanner.o scanner.lex.o
+test_scanner: scanner.lex.c scanner.c test_scanner.c
+	$(CC) $(CFLAGS) scanner.lex.c scanner.c test_scanner.c -o test_scanner
 
-# all: $(TARGET)
-
-# $(TARGET): $(OBJS)
-# 	$(CC) $(OBJS) -o $(TARGET)
-
-# $(LEX_C): $(LEX_SRC)
-# 	$(FLEX) -o $@ $<
-
-# %.o: %.c
-# 	$(CC) $(CFLAGS) -c $< -o $@
-
-# clean:
-# 	rm -f $(TARGET) $(OBJS) $(LEX_C) lex.yy.c preprocessor
-
-# .PHONY: all clean
+scanner.lex.c: scanner.l
+	$(FLEX) -o scanner.lex.c scanner.l
 
 clean:
-	rm -f preprocessor
+	rm -f preprocessor test_scanner *.lex.c *.o
+
+.PHONY: all clean
