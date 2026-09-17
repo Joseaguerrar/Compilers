@@ -21,6 +21,9 @@ static int set_token(TokenType type, TokenCategory cat) {
 %option noyywrap
 %option nounput noinput
 
+ // Change the prefix of the generated functions to avoid conflicts with other lexers
+%option prefix="sc_"
+
 /* regex for literals & numbers */
 DIGIT       [0-9]
 HEX         [0-9a-fA-F]
