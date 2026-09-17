@@ -5,6 +5,8 @@
     #include <ctype.h>
     #include <unistd.h>
 
+    #include "preprocessor.h"
+
     #define MAX_MACROS 1000
     #define MAX_KEY 128
     #define MAX_VALUE 1024
@@ -448,6 +450,9 @@
     }
 %}
 
+ // Changing the prefix of the generated functions to avoid conflicts with other Flex scanners.
+%option prefix="pp_"
+
 /* State for multiline comments */
 %x COMMENT INCLUDE
 
@@ -708,65 +713,91 @@ int yywrap(){
     return 1;
 }
 
-/*
- * Opens the input file, assigns it to Flex through yyin,
- * executes the lexical preprocessing with yylex(), closes
- * the file and prints the macro table for verification.
- */
-int main(int argc, char *argv[]){
+int preprocess_file(
+    const char *input_filename,
+    char *temp_filename,
+    size_t temp_filename_size,
+    int *lexical_errors,
+    int *preprocessor_errors
+) {
+    if (input_filename == NULL ||
+        temp_filename == NULL ||
+        temp_filename_size == 0) {
 
-    // Explanation:
-    // yywrap() - wraps the above rule section
-    /* yyin - takes the file pointer 
-            which contains the input*/
-    /* yylex() - this is the main flex function
-            which runs the Rule Section*/
-    // yytext is the text in the buffer
-
-    // Uncomment the lines below 
-    // to take input from file
-    if (argc != 2) {
-        fprintf(stderr, "Uso: %s <archivo.c>\n", argv[0]);
-        return 1;
+        return 0;
     }
 
-    FILE *fp = fopen(argv[1], "r");
+    FILE *input_file = fopen(input_filename, "r");
 
-    if (fp == NULL) {
-        fprintf(stderr, "Error: no se pudo abrir %s\n", argv[1]);
-        return 1;
+    if (input_file == NULL) {
+        fprintf(
+            stderr,
+            "Error: no se pudo abrir %s\n",
+            input_filename
+        );
+
+        return 0;
     }
 
-    char temp_filename[] = "/tmp/preprocessor_XXXXXX";
+    char temp_template[] = "/tmp/preprocessor_XXXXXX";
 
-    int temp_fd = mkstemp(temp_filename);
+    int temp_fd = mkstemp(temp_template);
 
     if (temp_fd == -1) {
-        fprintf(stderr, "Error: no se pudo crear el archivo temporal\n");
-        fclose(fp);
-        return 1;
+        fprintf(
+            stderr,
+            "Error: no se pudo crear el archivo temporal\n"
+        );
+
+        fclose(input_file);
+
+        return 0;
     }
 
     FILE *temp_file = fdopen(temp_fd, "w");
 
     if (temp_file == NULL) {
-        fprintf(stderr, "Error: no se pudo abrir el archivo temporal\n");
+        fprintf(
+            stderr,
+            "Error: no se pudo abrir el archivo temporal\n"
+        );
+
         close(temp_fd);
-        fclose(fp);
-        return 1;
+        fclose(input_file);
+
+        return 0;
     }
 
-    yyin = fp;
-    yyout = temp_file;
+    lexical_error_count = 0;
+    preprocessor_error_count = 0;
+    include_depth = 0;
 
-    yylex();
+    pp_in = input_file;
+    pp_out = temp_file;
 
-    fclose(fp);
+    pp_lex();
+
+    fclose(input_file);
     fclose(temp_file);
 
-    printf("Archivo temporal generado: %s\n", temp_filename);
-    printf("Errores lexicos: %d\n", lexical_error_count);
-    printf("Errores de preprocesador: %d\n", preprocessor_error_count);
+    if (strlen(temp_template) + 1 > temp_filename_size) {
+        fprintf(
+            stderr,
+            "Error: nombre de archivo temporal demasiado largo\n"
+        );
 
-    return 0;
+        return 0;
+    }
+
+    strcpy(temp_filename, temp_template);
+
+    if (lexical_errors != NULL) {
+        *lexical_errors = lexical_error_count;
+    }
+
+    if (preprocessor_errors != NULL) {
+        *preprocessor_errors = preprocessor_error_count;
+    }
+
+    return 1;
 }
