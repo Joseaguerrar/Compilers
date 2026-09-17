@@ -59,6 +59,9 @@ Token Get_Token(void);
 
 // Initialize scanner based on a file
 // TODO: Input filter on "filename" to avoid seg fault
-void init_scanner(const char* filename);
+int init_scanner(const char* filename);
+
+// Close scanner input
+void close_scanner(void);
 
 #endif
