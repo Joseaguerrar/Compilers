@@ -9,4 +9,10 @@ Scanner/src/lex.yy.c
 Scanner/src/*.lex.c
 Scanner/src/*.o
 Scanner/src/preprocessor
-Scanner/src/test_scanner
+Scanner/presentation/*.aux
+Scanner/presentation/*.log
+Scanner/presentation/*.nav
+Scanner/presentation/*.out
+Scanner/presentation/*.snm
+Scanner/presentation/*.toc
+Scanner/presentation/*.vrb
