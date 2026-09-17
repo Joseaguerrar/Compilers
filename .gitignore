@@ -16,6 +16,8 @@ Scanner/presentation/*.out
 Scanner/presentation/*.snm
 Scanner/presentation/*.toc
 Scanner/presentation/*.vrb
+Scanner/presentation/*.pdf
+Scanner/presentation/*.tex
 
 # binarios, código autogenerado de flex y objetos de Scanner
 Scanner/bin
