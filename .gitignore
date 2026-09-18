@@ -22,3 +22,4 @@ Scanner/presentation/*.tex
 # binarios, código autogenerado de flex y objetos de Scanner
 Scanner/bin
 Scanner/build
+Scanner/src/test_scanner
