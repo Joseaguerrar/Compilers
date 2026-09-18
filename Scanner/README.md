@@ -62,33 +62,73 @@
     * Histograma de las cantidades de cada tipo de *token* encontrados en el fuente.
         * Preparar un archivo de datos e invocar al comando `gnuplot` desde el programa o usar el package `pgfplots` de `Latex`.
 
-# Proyect 1: Lexical Analysis
+## Requisitos del Sistema y Dependencias
 
-## Requirements
+Para compilar y ejecutar el proyecto (incluyendo la generación y visualización de la presentación Beamer), se requieren:
+- **Compilador C / Herramientas de construcción:** `gcc`, `make`
+- **Generador léxico:** `flex`
+- **Motor LaTeX y paquetes Beamer/Pgfplots:** `pdflatex`, `beamer`, `pgfplots`, `tikz`, `listings`
+- **Visor de PDF en modo presentación:** `evince`
 
-1. Install `Flex`
+### Instalación de dependencias por distribución
 
-```
-sudo apt-get update
-sudo apt-get install flex
-```
-
-## Compilation
-
-1. Compile `.l` or `.lex` extension program
-
-```
-flex *.l
+#### Arch Linux / EndeavourOS / Manjaro
+```bash
+sudo pacman -S flex gcc make texlive-basic texlive-latex texlive-latexrecommended texlive-latexextra texlive-pictures evince
 ```
 
-2. Compile created `lex.yy.c` with gcc.
-
+#### Ubuntu / Debian / Linux Mint
+```bash
+sudo apt update
+sudo apt install -y flex gcc make texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-pictures evince
 ```
-gcc lex.yy.c
+
+#### Fedora
+```bash
+sudo dnf install -y flex gcc make texlive-scheme-basic texlive-beamer texlive-pgf texlive-pgfplots evince
 ```
 
-3. Execute
+---
 
+## Compilación
+
+Desde la carpeta raíz del proyecto:
+
+```bash
+make
 ```
-./a.out
+
+Esto generará automáticamente el ejecutable y el acceso directo `./scanner` en la raíz.
+
+Otras opciones de compilación:
+- **Limpiar binarios y temporales:** `make clean`
+- **Recompilar todo desde cero:** `make rebuild`
+
+---
+
+## Ejecución
+
+Para analizar un archivo fuente y abrir automáticamente la presentación Beamer:
+
+```bash
+./scanner <archivo_fuente.c>
+```
+
+### Ejemplos con casos de prueba incluidos:
+
+```bash
+# Programa C completo (demostración principal)
+./scanner tests/18_programa_completo.c
+
+# Probar todas las palabras reservadas
+./scanner tests/10_todas_keywords.c
+
+# Probar constantes numéricas (hex, octal, float, chars)
+./scanner tests/11_constantes_numericas.c
+
+# Probar macros recursivas y directivas de preproceso
+./scanner tests/05_define_recursivo.c
+
+# Probar manejo de errores léxicos
+./scanner tests/09_caracteres_ilegales.c
 ```
