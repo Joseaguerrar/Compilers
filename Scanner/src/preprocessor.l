@@ -99,7 +99,7 @@
     static MacroType macro_type(const char* value) {
         const char* valuePointer = value;
 
-        if (valuePointer[0] == '\0') return M_EMPTY;
+        if (valuePointer[0] == '\0') {preprocessor_error_count++; fprintf(stderr, "Error: directiva include incompleta\n"); return M_EMPTY;}
         if (valuePointer[0] == '"') return M_STRING;
         if (valuePointer[0] == '\'') return M_CHAR;
 
@@ -263,6 +263,10 @@
                 }
 
                 continue;
+            }
+
+            if (temp[0] == '/' && temp[1] == '/') {
+                break;
             }
 
             if (*temp == '"' || *temp == '\'') {
