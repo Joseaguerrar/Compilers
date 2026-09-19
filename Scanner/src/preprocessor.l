@@ -134,7 +134,53 @@
         return NULL;
     }
 
-        /*
+    
+    static size_t continuation_length(const char* temp) {
+        if (temp[0] != '\\') {
+            return 0;
+        }
+
+        size_t length = 1;
+
+        while (temp[length] == ' '  ||
+               temp[length] == '\t' ||
+               temp[length] == '\r') {
+            length++;
+        }
+
+        if (temp[length] != '\n') {
+            return 0;
+        }
+
+        return length + 1;
+    }
+
+    static const char* skip_blanks(const char* temp) {
+        while (1) {
+            if (*temp == ' ' || *temp == '\t' || *temp == '\r') {
+                temp++;
+                continue;
+            }
+
+            size_t continuation = continuation_length(temp);
+
+            if (continuation == 0) {
+                return temp;
+            }
+
+            temp += continuation;
+        }
+    }
+
+    static void keep_line_count(const char* text) {
+        for (const char* temp = text; *temp != '\0'; temp++) {
+            if (*temp == '\n') {
+                fputc('\n', yyout);
+            }
+        }
+    }
+
+    /*
     * Processes the complete text of a #define directive.
     * Extracts the macro name and its associated value,
     * determines its type and stores it in the macro table.
@@ -145,15 +191,15 @@
         char value_buffer[MAX_VALUE];
         int value_index = 0;
 
-        while (*temp == ' ' || *temp == '\t') temp++;
+        temp = skip_blanks(temp);
 
         if (*temp == '#') temp++;
 
-        while (*temp == ' ' || *temp == '\t') temp++;
+        temp = skip_blanks(temp);
 
         if (*temp == 'd') temp += 6;
 
-        while (*temp == ' ' || *temp == '\t') temp++;
+        temp = skip_blanks(temp);
 
         /*
         * Save where the macro name begins and advance until
@@ -181,9 +227,20 @@
         memcpy(key_buffer, key_start, key_length);
         key_buffer[key_length] = '\0';
 
-        while (*temp == ' ' || *temp == '\t') temp++;
+        temp = skip_blanks(temp);
 
         while (*temp != '\0' && value_index < MAX_VALUE - 1) {
+
+            size_t continuation = continuation_length(temp);
+
+            if (continuation > 0) {
+                temp += continuation;
+                continue;
+            }
+
+            if (*temp == '\n') {
+                break;
+            }
 
             if (temp[0] == '/' && temp[1] == '*') {
                 temp += 2;
@@ -214,6 +271,19 @@
                 value_buffer[value_index++] = *temp++;
 
                 while (*temp != '\0' && value_index < MAX_VALUE - 1) {
+
+                    size_t literal_continuation =
+                        continuation_length(temp);
+
+                    if (literal_continuation > 0) {
+                        temp += literal_continuation;
+                        continue;
+                    }
+
+                    if (*temp == '\n') {
+                        break;
+                    }
+
                     value_buffer[value_index++] = *temp;
 
                     if (*temp == '\\' && temp[1] != '\0') {
@@ -251,6 +321,7 @@
         value_buffer[value_index] = '\0';
 
         MacroType type = macro_type(value_buffer);
+        printf("TYPE: %d\n", type);
 
         int result = macro_insert(key_buffer, value_buffer, type);
 
@@ -456,6 +527,9 @@
 /* State for multiline comments */
 %x COMMENT INCLUDE
 
+CONT    \\[ \t\r]*\n
+REST    ({CONT}|[^\n])*
+
 /*
  * Preprocessor lexical rules:
  *
@@ -529,12 +603,14 @@
  */
 
 %%
-^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*[^\n]*"/*"([^*]|\*+[^*/])*\*+"/"[^\n]* {
+^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*{REST}"/*"([^*]|\*+[^*/])*\*+"/"{REST} {
     macro_handle_define(yytext);
+    keep_line_count(yytext);
 }
 
-^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*[^\n]* {
+^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*{REST} {
     macro_handle_define(yytext);
+    keep_line_count(yytext);
 }
 
 ^[ \t]*#[ \t]*include[ \t]*\n {
