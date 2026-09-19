@@ -4,6 +4,7 @@
     #include <string.h>
     #include <ctype.h>
     #include <unistd.h>
+    #include <stdbool.h>
 
     #include "preprocessor.h"
 
@@ -11,7 +12,8 @@
     #define MAX_KEY 128
     #define MAX_VALUE 1024
     #define MAX_DEPTH 32
-    #define MAX_TYPES 8
+    #define MAX_TYPES 9
+    #define MAX_ARGS 32
 
     typedef enum {
         M_INT, //
@@ -21,16 +23,19 @@
         M_IDENT,
         M_EXPR,
         M_EXPANDED,
+        M_FUNCTION,
         M_EMPTY //
     } MacroType;
 
     static const char* TYPE_NAME[MAX_TYPES] = 
-    {"int", "double", "string", "char", "ident", "expr", "expanded", "empty"};
+    {"int", "double", "string", "char", "ident", "expr", "expanded", "function", "empty"};
 
     typedef struct {
         char* key;
         char* value;
         MacroType type;
+        int arg_count;
+        char* args[MAX_ARGS];
     } Macro;
 
     static Macro macro_table[MAX_MACROS];
@@ -67,7 +72,8 @@
      * Checks that the table is not full and that the macro
      * has not already been defined before storing it.
      */
-    static int macro_insert(const char* key, const char* value, const MacroType type) {
+    static int macro_insert(const char* key, const char* value, const MacroType type,
+                            char** args, int arg_count) {
         if (macro_count >= MAX_MACROS) {
           fprintf(stderr, "Error: tabla de macros llena\n");
           preprocessor_error_count++;
@@ -85,6 +91,12 @@
         macro_table[macro_count].key = strdup(key);
         macro_table[macro_count].value = strdup(value);
         macro_table[macro_count].type = type;
+
+        macro_table[macro_count].arg_count = arg_count;
+
+        for (int i = 0; i < arg_count; i++) {
+            macro_table[macro_count].args[i] = strdup(args[i]);
+        }
 
         macro_count++;
 
@@ -124,14 +136,36 @@
      * Returns the associated value if found, or NULL if the
      * identifier has not been defined as a macro.
      */
-    static const char* macro_find(const char* key) {
+    static const Macro* macro_find(const char* key) {
         for (int i = 0; i < macro_count; i++) {
             if (strcmp(macro_table[i].key, key) == 0) {
-                return macro_table[i].value;
+                return &macro_table[i];
             }
         }
 
         return NULL;
+    }
+
+    static void free_args(char** args, int count) {
+        for (int i = 0; i < count; i++) {
+            free(args[i]);
+        }
+    }
+
+    static int define_error(char* key, char** args, int count, const char* message) {
+        fprintf(stderr, "Error: %s\n", message);
+        preprocessor_error_count++;
+        free(key);
+        free_args(args, count);
+        return 0;
+    }
+
+    static int is_ident_start(int c) {
+        return c == '_' || isalpha((unsigned char)c);
+    }
+
+    static int is_ident_char(int c) {
+        return c == '_' || isalnum((unsigned char)c);
     }
 
     
@@ -207,6 +241,12 @@
         */
         const char* key_start = temp;
 
+        if (*temp != '_' && !isalpha((unsigned char)*temp)) {
+            lexical_error_count++;
+            fprintf(stderr, "Error: nombre de macro invalido\n");
+            return 0;
+        }
+
         while (*temp == '_' || isalnum((unsigned char)*temp)) {
             temp++;
         }
@@ -226,6 +266,75 @@
 
         memcpy(key_buffer, key_start, key_length);
         key_buffer[key_length] = '\0';
+
+        char* params[MAX_ARGS];
+        int param_count = 0;
+        bool is_function = false;
+
+        if (*temp == '(') {
+            is_function = true;
+            temp++;
+            temp = skip_blanks(temp);
+
+            if (*temp != ')') {
+                while (1) {
+                    temp = skip_blanks(temp);
+
+                    if (!is_ident_start(*temp)) {
+                        return define_error(key_buffer, params, param_count,
+                                            "parametro de macro invalido");
+                    }
+
+                    const char* param_start = temp;
+
+                    while (is_ident_char(*temp)) {
+                        temp++;
+                    }
+
+                    size_t param_length = (size_t)(temp - param_start);
+
+                    if (param_count >= MAX_ARGS) {
+                        return define_error(key_buffer, params, param_count,
+                                            "demasiados parametros en la macro");
+                    }
+
+                    for (int i = 0; i < param_count; i++) {
+                        if (strlen(params[i]) == param_length &&
+                            strncmp(params[i], param_start, param_length) == 0) {
+                            return define_error(key_buffer, params, param_count,
+                                                "parametro de macro duplicado");
+                        }
+                    }
+
+                    params[param_count] = malloc(param_length + 1);
+
+                    if (params[param_count] == NULL) {
+                        return define_error(key_buffer, params, param_count,
+                                            "no se pudo reservar memoria para el macro");
+                    }
+
+                    memcpy(params[param_count], param_start, param_length);
+                    params[param_count][param_length] = '\0';
+                    param_count++;
+
+                    temp = skip_blanks(temp);
+
+                    if (*temp == ',') {
+                        temp++;
+                        continue;
+                    }
+
+                    break;
+                }
+            }
+
+            if (*temp != ')') {
+                return define_error(key_buffer, params, param_count,
+                                    "lista de parametros de macro sin cerrar");
+            }
+
+            temp++;
+        }
 
         temp = skip_blanks(temp);
 
@@ -324,12 +433,12 @@
 
         value_buffer[value_index] = '\0';
 
-        MacroType type = macro_type(value_buffer);
-        printf("TYPE: %d\n", type);
+        MacroType type = is_function ? M_FUNCTION : macro_type(value_buffer);
 
-        int result = macro_insert(key_buffer, value_buffer, type);
+        int result = macro_insert(key_buffer, value_buffer, type, params, param_count);
 
         free(key_buffer);
+        free_args(params, param_count);
 
         return result;
     }
@@ -369,6 +478,257 @@
         filename[length] = '\0';
 
         return 1;
+    }
+
+    static int expand_macro_value(const char* value, char* output,
+                              size_t output_size, int depth);
+
+    static size_t skip_literal(const char* text, size_t i) {
+        char quote = text[i++];
+
+        while (text[i] != '\0') {
+            if (text[i] == '\\' && text[i + 1] != '\0') {
+                i += 2;
+                continue;
+            }
+
+            if (text[i] == quote) {
+                return i + 1;
+            }
+
+            i++;
+        }
+
+        return i;
+    }
+
+    static int append_text(char* output, size_t* out_index, size_t output_size,
+                           const char* text, size_t length) {
+        if (*out_index + length >= output_size) {
+            fprintf(stderr, "Error: expansion de macro demasiado larga\n");
+            preprocessor_error_count++;
+            return 0;
+        }
+
+        memcpy(output + *out_index, text, length);
+        *out_index += length;
+
+        return 1;
+    }
+
+    static int collect_arguments(const char* text, size_t open, size_t* starts,
+                                 size_t* ends, int* count, size_t* close) {
+        int depth = 0;
+        int found = 0;
+        size_t arg_start = open + 1;
+        size_t i = open;
+
+        while (text[i] != '\0') {
+            char c = text[i];
+
+            if (c == '"' || c == '\'') {
+                i = skip_literal(text, i);
+                continue;
+            }
+
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+
+                if (depth == 0) {
+                    if (found >= MAX_ARGS) {
+                        return -1;
+                    }
+
+                    starts[found] = arg_start;
+                    ends[found] = i;
+                    found++;
+
+                    *count = found;
+                    *close = i;
+
+                    return 1;
+                }
+            } else if (c == ',' && depth == 1) {
+                if (found >= MAX_ARGS) {
+                    return -1;
+                }
+
+                starts[found] = arg_start;
+                ends[found] = i;
+                found++;
+
+                arg_start = i + 1;
+            }
+
+            i++;
+        }
+
+        return 0;
+    }
+
+    static void trim_range(const char* text, size_t* start, size_t* end) {
+        while (*start < *end && isspace((unsigned char)text[*start])) {
+            (*start)++;
+        }
+
+        while (*end > *start && isspace((unsigned char)text[*end - 1])) {
+            (*end)--;
+        }
+    }
+
+    static int param_index(const Macro* macro, const char* name, size_t length) {
+        for (int i = 0; i < macro->arg_count; i++) {
+            if (strlen(macro->args[i]) == length &&
+                strncmp(macro->args[i], name, length) == 0) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    static int substitute_body(const Macro* macro, char** expanded_args,
+                               char* output, size_t output_size) {
+        const char* body = macro->value;
+        size_t out_index = 0;
+        size_t b = 0;
+
+        while (body[b] != '\0') {
+            int ok;
+
+            if (body[b] == '"' || body[b] == '\'') {
+                size_t end = skip_literal(body, b);
+                ok = append_text(output, &out_index, output_size, body + b, end - b);
+                b = end;
+            } else if (is_ident_start(body[b])) {
+                size_t start = b;
+
+                while (is_ident_char(body[b])) {
+                    b++;
+                }
+
+                int index = param_index(macro, body + start, b - start);
+
+                if (index >= 0) {
+                    ok = append_text(output, &out_index, output_size,
+                                     expanded_args[index], strlen(expanded_args[index]));
+                } else {
+                    ok = append_text(output, &out_index, output_size, body + start, b - start);
+                }
+            } else if (isdigit((unsigned char)body[b])) {
+                size_t start = b;
+
+                while (is_ident_char(body[b]) || body[b] == '.') {
+                    b++;
+                }
+
+                ok = append_text(output, &out_index, output_size, body + start, b - start);
+            } else {
+                ok = append_text(output, &out_index, output_size, body + b, 1);
+                b++;
+            }
+
+            if (!ok) {
+                return 0;
+            }
+        }
+
+        output[out_index] = '\0';
+
+        return 1;
+    }
+
+    static int expand_function_macro(const Macro* macro, const char* value,
+                                     size_t* position, char* output,
+                                     size_t* out_index, size_t output_size,
+                                     int depth) {
+        size_t open = *position;
+
+        while (value[open] == ' ' || value[open] == '\t' ||
+               value[open] == '\r' || value[open] == '\n') {
+            open++;
+        }
+
+        if (value[open] != '(') {
+            return 0;
+        }
+
+        size_t starts[MAX_ARGS];
+        size_t ends[MAX_ARGS];
+        size_t close = 0;
+        int argc = 0;
+
+        int status = collect_arguments(value, open, starts, ends, &argc, &close);
+
+        if (status == 0) {
+            fprintf(stderr, "Error: llamada a macro %s sin cerrar\n", macro->key);
+            preprocessor_error_count++;
+            return -1;
+        }
+
+        if (status < 0) {
+            fprintf(stderr, "Error: demasiados argumentos para la macro %s\n", macro->key);
+            preprocessor_error_count++;
+            return -1;
+        }
+
+        for (int i = 0; i < argc; i++) {
+            trim_range(value, &starts[i], &ends[i]);
+        }
+
+        if (macro->arg_count == 0 && argc == 1 && starts[0] == ends[0]) {
+            argc = 0;
+        }
+
+        if (argc != macro->arg_count) {
+            fprintf(stderr, "Error: la macro %s espera %d argumentos y recibio %d\n",
+                    macro->key, macro->arg_count, argc);
+            preprocessor_error_count++;
+            return -1;
+        }
+
+        char* expanded_args[MAX_ARGS] = {0};
+        char* substituted = malloc(MAX_VALUE);
+        char* rescanned = malloc(MAX_VALUE);
+        int ok = (substituted != NULL && rescanned != NULL);
+
+        for (int i = 0; ok && i < argc; i++) {
+            size_t length = ends[i] - starts[i];
+            char* raw = malloc(length + 1);
+            expanded_args[i] = malloc(MAX_VALUE);
+
+            if (raw == NULL || expanded_args[i] == NULL) {
+                ok = 0;
+            } else {
+                memcpy(raw, value + starts[i], length);
+                raw[length] = '\0';
+                ok = expand_macro_value(raw, expanded_args[i], MAX_VALUE, depth + 1);
+            }
+
+            free(raw);
+        }
+
+        if (ok) {
+            ok = substitute_body(macro, expanded_args, substituted, MAX_VALUE);
+        }
+
+        if (ok) {
+            ok = expand_macro_value(substituted, rescanned, MAX_VALUE, depth + 1);
+        }
+
+        if (ok) {
+            ok = append_text(output, out_index, output_size, rescanned, strlen(rescanned));
+        }
+
+        free_args(expanded_args, argc);
+        free(substituted);
+        free(rescanned);
+
+        *position = close + 1;
+
+        return ok ? 1 : -1;
     }
 
     /*
@@ -458,9 +818,30 @@
                 memcpy(identifier, value + id_start, id_length);
                 identifier[id_length] = '\0';
 
-                const char *replacement = macro_find(identifier);
+                const Macro *macro = macro_find(identifier);
 
-                if (replacement != NULL) {
+                if (macro != NULL && macro->type == M_FUNCTION) {
+
+                    size_t next = i;
+                    int status = expand_function_macro(macro, value, &next, output,
+                                                       &out_index, output_size, depth);
+
+                    if (status < 0) {
+                        free(identifier);
+                        return 0;
+                    }
+
+                    if (status == 1) {
+                        i = next;
+                    } else if (!append_text(output, &out_index, output_size,
+                                            identifier, id_length)) {
+                        free(identifier);
+                        return 0;
+                    }
+
+                } else if (macro != NULL) {
+
+                    const char *replacement = macro->value;
 
                     char expanded[MAX_VALUE];
 
@@ -505,6 +886,19 @@
 
                 free(identifier);
 
+            } else if (isdigit((unsigned char)value[i])) {
+
+                size_t number_start = i;
+
+                while (is_ident_char(value[i]) || value[i] == '.') {
+                    i++;
+                }
+
+                if (!append_text(output, &out_index, output_size,
+                                 value + number_start, i - number_start)) {
+                    return 0;
+                }
+
             } else {
 
                 if (out_index + 1 >= output_size) {
@@ -523,6 +917,8 @@
 
         return 1;
     }
+
+    static void handle_function_call(const Macro* macro, const char* name);
 %}
 
  // Changing the prefix of the generated functions to avoid conflicts with other Flex scanners.
@@ -607,12 +1003,12 @@ REST    ({CONT}|[^\n])*
  */
 
 %%
-^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*{REST}"/*"([^*]|\*+[^*/])*\*+"/"{REST} {
+^[ \t]*#[ \t]*define[ \t]+[A-Za-z0-9_]+{REST}"/*"([^*]|\*+[^*/])*\*+"/"{REST} {
     macro_handle_define(yytext);
     keep_line_count(yytext);
 }
 
-^[ \t]*#[ \t]*define[ \t]+[A-Za-z_][A-Za-z0-9_]*{REST} {
+^[ \t]*#[ \t]*define[ \t]+[A-Za-z0-9_]+{REST} {
     macro_handle_define(yytext);
     keep_line_count(yytext);
 }
@@ -692,13 +1088,19 @@ REST    ({CONT}|[^\n])*
     fprintf(yyout, "%s", yytext);
 }
 
-[A-Za-z_][A-Za-z0-9_]* {
-    const char* value = macro_find(yytext);
+[0-9][A-Za-z0-9_.]* {
+    fprintf(yyout, "%s", yytext);
+}
 
-    if (value != NULL) {
+[A-Za-z_][A-Za-z0-9_]* {
+    const Macro* macro = macro_find(yytext);
+
+    if (macro != NULL && macro->type == M_FUNCTION) {
+        handle_function_call(macro, yytext);
+    } else if (macro != NULL) {
         char expanded[MAX_VALUE];
 
-        if (expand_macro_value(value, expanded, sizeof(expanded), 0)) {
+        if (expand_macro_value(macro->value, expanded, sizeof(expanded), 0)) {
             fprintf(yyout, "%s", expanded);
         } else {
             fprintf(yyout, "%s", yytext);
@@ -791,6 +1193,110 @@ REST    ({CONT}|[^\n])*
  */
 int yywrap(){
     return 1;
+}
+
+static void handle_function_call(const Macro* macro, const char* name) {
+    char call[MAX_VALUE];
+    char blanks[MAX_VALUE];
+    size_t call_length = strlen(name);
+    size_t blank_length = 0;
+    int newlines = 0;
+    int c;
+
+    if (call_length >= sizeof(call) - 1) {
+        fprintf(yyout, "%s", name);
+        return;
+    }
+
+    memcpy(call, name, call_length);
+    call[call_length] = '\0';
+
+    while ((c = input()) != EOF && c != 0 && isspace(c)) {
+        if (c == '\n') {
+            newlines++;
+        }
+
+        if (blank_length < sizeof(blanks) - 1) {
+            blanks[blank_length++] = (char)c;
+        }
+    }
+
+    blanks[blank_length] = '\0';
+
+    if (c != '(') {
+        fprintf(yyout, "%s%s", call, blanks);
+
+        if (c != EOF && c != 0) {
+            unput(c);
+        }
+
+        return;
+    }
+
+    call[call_length++] = '(';
+
+    int depth = 1;
+    int terminated = 0;
+    int quote = 0;
+    int escaped = 0;
+
+    while (call_length < sizeof(call) - 1) {
+        c = input();
+
+        if (c == EOF || c == 0) {
+            break;
+        }
+
+        if (c == '\n') {
+            newlines++;
+            c = ' ';
+            quote = 0;
+            escaped = 0;
+        }
+
+        call[call_length++] = (char)c;
+
+        if (quote) {
+            if (escaped) {
+                escaped = 0;
+            } else if (c == '\\') {
+                escaped = 1;
+            } else if (c == quote) {
+                quote = 0;
+            }
+        } else if (c == '"' || c == '\'') {
+            quote = c;
+        } else if (c == '(') {
+            depth++;
+        } else if (c == ')') {
+            depth--;
+
+            if (depth == 0) {
+                terminated = 1;
+                break;
+            }
+        }
+    }
+
+    call[call_length] = '\0';
+
+    if (!terminated) {
+        fprintf(stderr, "Error: llamada a macro %s sin cerrar\n", macro->key);
+        preprocessor_error_count++;
+        fprintf(yyout, "%s", call);
+    } else {
+        char expanded[MAX_VALUE];
+
+        if (expand_macro_value(call, expanded, sizeof(expanded), 0)) {
+            fprintf(yyout, "%s", expanded);
+        } else {
+            fprintf(yyout, "%s", call);
+        }
+    }
+
+    for (int i = 0; i < newlines; i++) {
+        fputc('\n', yyout);
+    }
 }
 
 int preprocess_file(
