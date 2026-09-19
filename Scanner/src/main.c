@@ -18,6 +18,9 @@
 #define PDF_FILENAME \
     "presentation/presentation.pdf"
 
+#define LATEX_LOG_FILENAME \
+    "presentation/pdflatex.out"
+
 
 /*
  * Releases every lexeme allocated by the scanner and
@@ -148,7 +151,8 @@ static int compile_beamer(void) {
         "-interaction=nonstopmode "
         "-halt-on-error "
         "-output-directory=presentation "
-        "presentation/presentation.tex";
+        "presentation/presentation.tex "
+        ">" LATEX_LOG_FILENAME " 2>&1";
 
     /*
      * Beamer is compiled twice so navigation information
@@ -160,7 +164,8 @@ static int compile_beamer(void) {
         fprintf(
             stderr,
             "Error: pdflatex falló durante "
-            "la primera compilación\n"
+            "la primera compilación (ver %s)\n",
+            LATEX_LOG_FILENAME
         );
 
         return 0;
@@ -171,7 +176,8 @@ static int compile_beamer(void) {
         fprintf(
             stderr,
             "Error: pdflatex falló durante "
-            "la segunda compilación\n"
+            "la segunda compilación (ver %s)\n",
+            LATEX_LOG_FILENAME
         );
 
         return 0;
