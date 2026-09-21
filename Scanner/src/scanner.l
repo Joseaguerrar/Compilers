@@ -90,6 +90,7 @@ FLOAT       ({DIGIT}+\.{DIGIT}*|\.{DIGIT}+)([eE][+-]?{DIGIT}+)?[fFlL]?|{DIGIT}+[
 "<="        { return set_token(TOK_LE, CAT_OPERATOR); }
 ">="        { return set_token(TOK_GE, CAT_OPERATOR); }
 "&&"        { return set_token(TOK_AND, CAT_OPERATOR); }
+"&"         { return set_token(TOK_BIT_AND, CAT_OPERATOR); }
 "||"        { return set_token(TOK_OR, CAT_OPERATOR); }
 "="         { return set_token(TOK_ASSIGN, CAT_OPERATOR); }
 "+"         { return set_token(TOK_PLUS, CAT_OPERATOR); }
@@ -106,6 +107,7 @@ FLOAT       ({DIGIT}+\.{DIGIT}*|\.{DIGIT}+)([eE][+-]?{DIGIT}+)?[fFlL]?|{DIGIT}+[
 "["         { return set_token(TOK_LBRACKET, CAT_PUNCTUATOR); }
 "]"         { return set_token(TOK_RBRACKET, CAT_PUNCTUATOR); }
 ";"         { return set_token(TOK_SEMICOLON, CAT_PUNCTUATOR); }
+":"         { return set_token(TOK_COLON, CAT_PUNCTUATOR); }
 ","         { return set_token(TOK_COMMA, CAT_PUNCTUATOR); }
 "."         { return set_token(TOK_DOT, CAT_PUNCTUATOR); }
 
