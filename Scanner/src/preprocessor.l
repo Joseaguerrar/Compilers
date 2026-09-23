@@ -123,8 +123,9 @@
     }
 
     static int define_error(char* key, char** args, int count, const char* message) {
-        fprintf(stderr, "Error: %s\n", message);
+        fprintf(stderr, "Error: %s para %s\n", message, key);
         preprocessor_error_count++;
+        definitive_error = 0;
         free(key);
         free_args(args, count);
         return 0;
@@ -472,6 +473,7 @@
     static int append_text(char* output, size_t* out_index, size_t output_size,
                            const char* text, size_t length) {
         if (*out_index + length >= output_size) {
+            definitive_error = 0;
             fprintf(stderr, "Error: expansion de macro demasiado larga\n");
             preprocessor_error_count++;
             return 0;
@@ -631,6 +633,7 @@
 
         if (status == 0) {
             fprintf(stderr, "Error: llamada a macro %s sin cerrar\n", macro->key);
+            definitive_error = 0;
             preprocessor_error_count++;
             return -1;
         }
@@ -638,6 +641,7 @@
         if (status < 0) {
             fprintf(stderr, "Error: demasiados argumentos para la macro %s\n", macro->key);
             preprocessor_error_count++;
+            definitive_error = 0;
             return -1;
         }
 
@@ -653,6 +657,7 @@
             fprintf(stderr, "Error: la macro %s espera %d argumentos y recibio %d\n",
                     macro->key, macro->arg_count, argc);
             preprocessor_error_count++;
+            definitive_error = 0;
             return -1;
         }
 
@@ -715,7 +720,8 @@
                               size_t output_size, int depth,
                               const Macro** pending) {
         if (depth >= MAX_DEPTH) {
-            fprintf(stderr, "Error: profundidad maxima de macros alcanzada\n");
+            fprintf(stderr, "Error: profundidad maxima de macros alcanzada para %s\n", value);
+            definitive_error = 0;
             preprocessor_error_count++;
             return 0;
         }
@@ -779,6 +785,7 @@
                     fprintf(stderr,
                             "Error: no se pudo reservar memoria para el identificador\n");
                     preprocessor_error_count++;
+                    definitive_error = 0;
                     return 0;
                 }
 
@@ -841,8 +848,8 @@
                     size_t length = strlen(expanded);
 
                     if (out_index + length >= output_size) {
-                        fprintf(stderr,
-                                "Error: expansión de macro demasiado larga\n");
+                        fprintf(stderr, "Error: expansión de macro demasiado larga\n");
+                    definitive_error = 0;
 
                         preprocessor_error_count++;
                         free(identifier);
@@ -861,10 +868,10 @@
                 } else {
 
                     if (out_index + id_length >= output_size) {
-                        fprintf(stderr,
-                                "Error: expansión de macro demasiado larga\n");
+                        fprintf(stderr, "Error: expansión de macro demasiado larga\n");
 
                         preprocessor_error_count++;
+                        definitive_error = 0;
                         free(identifier);
                         return 0;
                     }
@@ -891,8 +898,8 @@
             } else {
 
                 if (out_index + 1 >= output_size) {
-                    fprintf(stderr,
-                            "Error: expansión de macro demasiado larga\n");
+                    fprintf(stderr, "Error: expansión de macro demasiado larga\n");
+                            definitive_error = 0;
 
                     preprocessor_error_count++;
                     return 0;
@@ -1237,6 +1244,7 @@ static void handle_function_call(const Macro* macro, const char* name) {
 
     if (!terminated) {
         fprintf(stderr, "Error: llamada a macro %s sin cerrar\n", macro->key);
+        definitive_error = 0;
         preprocessor_error_count++;
         fprintf(yyout, "%s", call);
     } else {
@@ -1296,7 +1304,7 @@ int preprocess_file(
 
         fclose(input_file);
 
-        return 1;
+        return 0;
     }
 
     FILE *temp_file = fdopen(temp_fd, "w");
@@ -1310,7 +1318,7 @@ int preprocess_file(
         close(temp_fd);
         fclose(input_file);
 
-        return 1;
+        return 0;
     }
 
     lexical_error_count = 0;
@@ -1331,7 +1339,7 @@ int preprocess_file(
             "Error: nombre de archivo temporal demasiado largo\n"
         );
 
-        return 1;
+        return 0;
     }
 
     strcpy(temp_filename, temp_template);
