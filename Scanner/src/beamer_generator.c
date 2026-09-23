@@ -154,6 +154,73 @@ static void write_latex_escaped(
     }
 }
 
+static void write_code_escaped(
+    FILE *file,
+    const char *text
+) {
+    if (file == NULL || text == NULL) {
+        return;
+    }
+
+    for (const char *p = text; *p != '\0'; p++) {
+
+        switch (*p) {
+
+            case '\\':
+                fprintf(file, "\\textbackslash{}");
+                break;
+
+            case '{':
+                fprintf(file, "\\{");
+                break;
+
+            case '}':
+                fprintf(file, "\\}");
+                break;
+
+            case '$':
+                fprintf(file, "\\$");
+                break;
+
+            case '&':
+                fprintf(file, "\\&");
+                break;
+
+            case '#':
+                fprintf(file, "\\#");
+                break;
+
+            case '_':
+                fprintf(file, "\\_");
+                break;
+
+            case '%':
+                fprintf(file, "\\%%");
+                break;
+
+            case '^':
+                fprintf(file, "\\textasciicircum{}");
+                break;
+
+            case '~':
+                fprintf(file, "\\textasciitilde{}");
+                break;
+
+            /*
+             * Avoid LaTeX converting -- into
+             * a typographical dash.
+             */
+            case '-':
+                fprintf(file, "\\char45{}");
+                break;
+
+            default:
+                fputc(*p, file);
+                break;
+        }
+    }
+}
+
 static const char *category_color(
     TokenCategory category
 ) {
@@ -240,7 +307,7 @@ static void write_styled_token(
         command
     );
 
-    write_latex_escaped(
+    write_code_escaped(
         file,
         token->lexeme
     );
