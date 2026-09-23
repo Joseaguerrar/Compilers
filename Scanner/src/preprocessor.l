@@ -16,15 +16,15 @@
     #define MAX_ARGS 32
 
     typedef enum {
-        M_INT, //
-        M_DOUBLE, //
-        M_STRING, //
-        M_CHAR, //
+        M_INT,
+        M_DOUBLE,
+        M_STRING,
+        M_CHAR,
         M_IDENT,
         M_EXPR,
         M_EXPANDED,
         M_FUNCTION,
-        M_EMPTY //
+        M_EMPTY
     } MacroType;
 
     static const char* TYPE_NAME[MAX_TYPES] = 
@@ -41,37 +41,21 @@
     static Macro macro_table[MAX_MACROS];
     static int macro_count = 0;
     
-    // Counters for lexical and preprocessor errors.
-    
     static int lexical_error_count = 0;
     static int preprocessor_error_count = 0;
+    static int definitive_error = 1;
 
-    // State variable to track whether we are inside a comment or not.
     static int comment_return_state = 0;
 
-   /*
-    * Stack of files currently being processed through #include.
-    * include_depth tracks the current nesting level.
-    */
     static FILE* include_files[MAX_DEPTH];
     static int include_depth = 0;
 
-    /*
-     * Prints all macros currently stored in the macro table.
-     * Used for debugging and verification of the stored key,
-     * value and detected macro type.
-     */
     static void print_macros() {
         for (int i = 0; i < macro_count; i++) {
             printf("\n%s\n%s\n%d\n", macro_table[i].key,macro_table[i].value, macro_table[i].type );
         }
     }
 
-    /*
-     * Inserts a new macro into the macro table.
-     * Checks that the table is not full and that the macro
-     * has not already been defined before storing it.
-     */
     static int macro_insert(const char* key, const char* value, const MacroType type,
                             char** args, int arg_count) {
         if (macro_count >= MAX_MACROS) {
@@ -103,15 +87,10 @@
         return 1;
     }
 
-    /*
-     * Determines the type of value associated with a macro.
-     * Values are classified as empty, string, char, integer,
-     * double, identifier or expression.
-     */
     static MacroType macro_type(const char* value) {
         const char* valuePointer = value;
 
-        if (valuePointer[0] == '\0') {preprocessor_error_count++; fprintf(stderr, "Error: directiva include incompleta\n"); return M_EMPTY;}
+        if (valuePointer[0] == '\0') return M_EMPTY;
         if (valuePointer[0] == '"') return M_STRING;
         if (valuePointer[0] == '\'') return M_CHAR;
 
@@ -131,11 +110,6 @@
         return M_EXPR;
     }
 
-    /*
-     * Searches for a macro by its key in the macro table.
-     * Returns the associated value if found, or NULL if the
-     * identifier has not been defined as a macro.
-     */
     static const Macro* macro_find(const char* key) {
         for (int i = 0; i < macro_count; i++) {
             if (strcmp(macro_table[i].key, key) == 0) {
@@ -166,6 +140,15 @@
 
     static int is_ident_char(int c) {
         return c == '_' || isalnum((unsigned char)c);
+    }
+
+    static int only_blanks_left(const char* text) {
+        while (*text == ' '  || *text == '\t' ||
+               *text == '\r' || *text == '\n') {
+            text++;
+        }
+
+        return *text == '\0';
     }
 
     
@@ -214,11 +197,6 @@
         }
     }
 
-    /*
-    * Processes the complete text of a #define directive.
-    * Extracts the macro name and its associated value,
-    * determines its type and stores it in the macro table.
-    */
     static int macro_handle_define(const char* text) {
         const char* temp = text;
 
@@ -235,10 +213,6 @@
 
         temp = skip_blanks(temp);
 
-        /*
-        * Save where the macro name begins and advance until
-        * the complete identifier has been read.
-        */
         const char* key_start = temp;
 
         if (*temp != '_' && !isalpha((unsigned char)*temp)) {
@@ -253,13 +227,11 @@
 
         size_t key_length = (size_t)(temp - key_start);
 
-        /*
-        * Allocate exactly enough memory for the macro name.
-        */
         char* key_buffer = malloc(key_length + 1);
 
         if (key_buffer == NULL) {
             fprintf(stderr, "Error: no se pudo reservar memoria para el macro\n");
+            definitive_error = 0;
             preprocessor_error_count++;
             return 0;
         }
@@ -277,7 +249,7 @@
             temp = skip_blanks(temp);
 
             if (*temp != ')') {
-                while (1) {
+                while (true) {
                     temp = skip_blanks(temp);
 
                     if (!is_ident_start(*temp)) {
@@ -363,7 +335,6 @@
                     temp += 2;
                 }
 
-                /* A comment in C behaves like whitespace */
                 if (value_index > 0 &&
                     value_index < MAX_VALUE - 1 &&
                     value_buffer[value_index - 1] != ' ') {
@@ -435,6 +406,12 @@
 
         MacroType type = is_function ? M_FUNCTION : macro_type(value_buffer);
 
+        if (type == M_EMPTY) {
+            preprocessor_error_count++;
+            definitive_error = 0;
+            fprintf(stderr, "Error: directiva include incompleta para %s\n", key_buffer);
+        }
+
         int result = macro_insert(key_buffer, value_buffer, type, params, param_count);
 
         free(key_buffer);
@@ -443,10 +420,6 @@
         return result;
     }
 
-    /*
-    * Extracts the filename from an #include directive.
-    * Supports both "file" and <file> syntax.
-    */
     static int include_get_filename(const char* text, char* filename, size_t size) {
         const char* start = strchr(text, '"');
         char end = '"';
@@ -481,7 +454,8 @@
     }
 
     static int expand_macro_value(const char* value, char* output,
-                              size_t output_size, int depth);
+                              size_t output_size, int depth,
+                              const Macro** pending);
 
     static size_t skip_literal(const char* text, size_t i) {
         char quote = text[i++];
@@ -643,7 +617,7 @@
     static int expand_function_macro(const Macro* macro, const char* value,
                                      size_t* position, char* output,
                                      size_t* out_index, size_t output_size,
-                                     int depth) {
+                                     int depth, const Macro** pending) {
         size_t open = *position;
 
         while (value[open] == ' ' || value[open] == '\t' ||
@@ -704,7 +678,8 @@
             } else {
                 memcpy(raw, value + starts[i], length);
                 raw[length] = '\0';
-                ok = expand_macro_value(raw, expanded_args[i], MAX_VALUE, depth + 1);
+                ok = expand_macro_value(raw, expanded_args[i], MAX_VALUE,
+                                        depth + 1, NULL);
             }
 
             free(raw);
@@ -714,12 +689,24 @@
             ok = substitute_body(macro, expanded_args, substituted, MAX_VALUE);
         }
 
+        const Macro* rescan_pending = NULL;
+
         if (ok) {
-            ok = expand_macro_value(substituted, rescanned, MAX_VALUE, depth + 1);
+
+            int at_tail = (pending != NULL &&
+                           only_blanks_left(value + close + 1));
+
+            ok = expand_macro_value(substituted, rescanned, MAX_VALUE,
+                                    depth + 1,
+                                    at_tail ? &rescan_pending : NULL);
         }
 
         if (ok) {
             ok = append_text(output, out_index, output_size, rescanned, strlen(rescanned));
+        }
+
+        if (ok && rescan_pending != NULL) {
+            *pending = rescan_pending;
         }
 
         free_args(expanded_args, argc);
@@ -731,14 +718,9 @@
         return ok ? 1 : -1;
     }
 
-    /*
-     * Recursively expands macros contained inside another macro value.
-     * Identifiers are searched in the macro table and replaced by their
-     * values. Strings and character literals are copied without expanding
-     * their internal contents. MAX_DEPTH prevents infinite recursion.
-     */
     static int expand_macro_value(const char* value, char* output,
-                              size_t output_size, int depth) {
+                              size_t output_size, int depth,
+                              const Macro** pending) {
         if (depth >= MAX_DEPTH) {
             fprintf(stderr, "Error: profundidad maxima de macros alcanzada\n");
             preprocessor_error_count++;
@@ -766,7 +748,6 @@
 
                     output[out_index++] = value[i];
 
-                    // Carácter escapado: \"  \'  \\  \n ...
                     if (value[i] == '\\' && value[i + 1] != '\0') {
                         i++;
 
@@ -790,10 +771,6 @@
             }
             if (value[i] == '_' || isalpha((unsigned char)value[i])) {
 
-                /*
-                * Save the beginning of the identifier and advance
-                * until the complete identifier has been read.
-                */
                 size_t id_start = i;
 
                 while (value[i] == '_' ||
@@ -803,9 +780,6 @@
 
                 size_t id_length = i - id_start;
 
-                /*
-                * Allocate exactly enough memory for the identifier.
-                */
                 char *identifier = malloc(id_length + 1);
 
                 if (identifier == NULL) {
@@ -824,7 +798,8 @@
 
                     size_t next = i;
                     int status = expand_function_macro(macro, value, &next, output,
-                                                       &out_index, output_size, depth);
+                                                       &out_index, output_size, depth,
+                                                       pending);
 
                     if (status < 0) {
                         free(identifier);
@@ -833,6 +808,17 @@
 
                     if (status == 1) {
                         i = next;
+
+                        if (pending != NULL && *pending != NULL) {
+                            free(identifier);
+                            break;
+                        }
+
+                    } else if (pending != NULL && only_blanks_left(value + i)) {
+
+                        *pending = macro;
+                        free(identifier);
+                        break;
                     } else if (!append_text(output, &out_index, output_size,
                                             identifier, id_length)) {
                         free(identifier);
@@ -844,12 +830,16 @@
                     const char *replacement = macro->value;
 
                     char expanded[MAX_VALUE];
+                    const Macro *nested_pending = NULL;
+
+                    int at_tail = (pending != NULL && only_blanks_left(value + i));
 
                     if (!expand_macro_value(
                             replacement,
                             expanded,
                             sizeof(expanded),
-                            depth + 1)) {
+                            depth + 1,
+                            at_tail ? &nested_pending : NULL)) {
 
                         free(identifier);
                         return 0;
@@ -868,6 +858,12 @@
 
                     memcpy(output + out_index, expanded, length);
                     out_index += length;
+
+                    if (nested_pending != NULL) {
+                        *pending = nested_pending;
+                        free(identifier);
+                        break;
+                    }
 
                 } else {
 
@@ -921,10 +917,8 @@
     static void handle_function_call(const Macro* macro, const char* name);
 %}
 
- // Changing the prefix of the generated functions to avoid conflicts with other Flex scanners.
 %option prefix="pp_"
 
-/* State for multiline comments */
 %x COMMENT INCLUDE
 
 CONT    \\[ \t\r]*\n
@@ -1015,6 +1009,7 @@ REST    ({CONT}|[^\n])*
 
 ^[ \t]*#[ \t]*include[ \t]*\n {
     fprintf(stderr, "Error: directiva include incompleta\n");
+    definitive_error = 0;
     preprocessor_error_count++;
 }
 
@@ -1027,17 +1022,7 @@ REST    ({CONT}|[^\n])*
     BEGIN(INCLUDE);
 }
 
-    /*
-    * Fallback for cases such as:
-    *
-    * #include
-    *
-    * followed immediately by EOF.
-    *
-    * It also allows forms such as:
-    * #include"file.h"
-    * #include<file.h>
-    */
+
 ^[ \t]*#[ \t]*include {
     BEGIN(INCLUDE);
 }
@@ -1046,6 +1031,7 @@ REST    ({CONT}|[^\n])*
 
 <INCLUDE>\n {
     fprintf(stderr, "Error: directiva include incompleta\n");
+    definitive_error = 0;
     preprocessor_error_count++;
     BEGIN(INITIAL);
 }
@@ -1063,10 +1049,12 @@ REST    ({CONT}|[^\n])*
 
         if (included_file == NULL) {
             fprintf(stderr, "Error: no se pudo abrir %s\n", filename);
+            definitive_error = 0;
             preprocessor_error_count++;
         } else if (include_depth >= MAX_DEPTH) {
             fprintf(stderr, "Error: demasiados includes anidados\n");
             preprocessor_error_count++;
+            definitive_error = 0;
             fclose(included_file);
         } else {
             include_files[include_depth++] = included_file;
@@ -1099,9 +1087,15 @@ REST    ({CONT}|[^\n])*
         handle_function_call(macro, yytext);
     } else if (macro != NULL) {
         char expanded[MAX_VALUE];
+        const Macro* pending = NULL;
 
-        if (expand_macro_value(macro->value, expanded, sizeof(expanded), 0)) {
+        if (expand_macro_value(macro->value, expanded, sizeof(expanded), 0,
+                               &pending)) {
             fprintf(yyout, "%s", expanded);
+ 
+            if (pending != NULL) {
+                handle_function_call(pending, pending->key);
+            }
         } else {
             fprintf(yyout, "%s", yytext);
         }
@@ -1115,11 +1109,6 @@ REST    ({CONT}|[^\n])*
 "/\*" {
     comment_return_state = YY_START;
 
-    /*
-     * A block comment behaves as whitespace.
-     * This prevents tokens around the comment from
-     * being joined together.
-     */
     fputc(' ', yyout);
 
     BEGIN(COMMENT);
@@ -1129,13 +1118,6 @@ REST    ({CONT}|[^\n])*
     BEGIN(comment_return_state);
 }
 <COMMENT>\n {
-    /*
-     * Preserve newlines only when the comment came from
-     * normal source code.
-     *
-     * Comments inside an #include directive must not be
-     * copied to the preprocessed output.
-     */
     if (comment_return_state == INITIAL) {
         fputc('\n', yyout);
     }
@@ -1144,6 +1126,7 @@ REST    ({CONT}|[^\n])*
 
 <COMMENT><<EOF>> {
     fprintf(stderr, "Error léxico: comentario sin cerrar\n");
+    definitive_error = 0;
     lexical_error_count++;
 
     BEGIN(INITIAL);
@@ -1158,14 +1141,11 @@ REST    ({CONT}|[^\n])*
 
 <INCLUDE><<EOF>> {
     fprintf(stderr, "Error: directiva include incompleta\n");
+    definitive_error = 0;
     preprocessor_error_count++;
 
     BEGIN(INITIAL);
 
-    /*
-     * If the malformed #include was inside an included file,
-     * close it and continue with its parent.
-     */
     if (include_depth > 0) {
 
         fclose(include_files[--include_depth]);
@@ -1187,10 +1167,6 @@ REST    ({CONT}|[^\n])*
 }
 %%
 
-/*
- * Indicates to Flex that there are no additional input files
- * after reaching the end of the current input.
- */
 int yywrap(){
     return 1;
 }
@@ -1198,9 +1174,15 @@ int yywrap(){
 static void handle_function_call(const Macro* macro, const char* name) {
     char call[MAX_VALUE];
     char blanks[MAX_VALUE];
+    size_t starts[MAX_ARGS];
+    size_t ends[MAX_ARGS];
     size_t call_length = strlen(name);
     size_t blank_length = 0;
+    size_t open = call_length;
+    size_t close = 0;
+    int argc = 0;
     int newlines = 0;
+    int terminated = 0;
     int c;
 
     if (call_length >= sizeof(call) - 1) {
@@ -1223,6 +1205,7 @@ static void handle_function_call(const Macro* macro, const char* name) {
 
     blanks[blank_length] = '\0';
 
+
     if (c != '(') {
         fprintf(yyout, "%s%s", call, blanks);
 
@@ -1234,11 +1217,7 @@ static void handle_function_call(const Macro* macro, const char* name) {
     }
 
     call[call_length++] = '(';
-
-    int depth = 1;
-    int terminated = 0;
-    int quote = 0;
-    int escaped = 0;
+    call[call_length] = '\0';
 
     while (call_length < sizeof(call) - 1) {
         c = input();
@@ -1250,31 +1229,16 @@ static void handle_function_call(const Macro* macro, const char* name) {
         if (c == '\n') {
             newlines++;
             c = ' ';
-            quote = 0;
-            escaped = 0;
         }
 
         call[call_length++] = (char)c;
+        call[call_length] = '\0';
 
-        if (quote) {
-            if (escaped) {
-                escaped = 0;
-            } else if (c == '\\') {
-                escaped = 1;
-            } else if (c == quote) {
-                quote = 0;
-            }
-        } else if (c == '"' || c == '\'') {
-            quote = c;
-        } else if (c == '(') {
-            depth++;
-        } else if (c == ')') {
-            depth--;
+        if (c == ')' &&
+            collect_arguments(call, open, starts, ends, &argc, &close) != 0) {
 
-            if (depth == 0) {
-                terminated = 1;
-                break;
-            }
+            terminated = 1;
+            break;
         }
     }
 
@@ -1286,9 +1250,14 @@ static void handle_function_call(const Macro* macro, const char* name) {
         fprintf(yyout, "%s", call);
     } else {
         char expanded[MAX_VALUE];
+        const Macro* pending = NULL;
 
-        if (expand_macro_value(call, expanded, sizeof(expanded), 0)) {
+        if (expand_macro_value(call, expanded, sizeof(expanded), 0, &pending)) {
             fprintf(yyout, "%s", expanded);
+
+            if (pending != NULL) {
+                handle_function_call(pending, pending->key);
+            }
         } else {
             fprintf(yyout, "%s", call);
         }
@@ -1321,7 +1290,6 @@ int preprocess_file(
             "Error: no se pudo abrir %s\n",
             input_filename
         );
-
         return 0;
     }
 
@@ -1337,7 +1305,7 @@ int preprocess_file(
 
         fclose(input_file);
 
-        return 0;
+        return 1;
     }
 
     FILE *temp_file = fdopen(temp_fd, "w");
@@ -1351,7 +1319,7 @@ int preprocess_file(
         close(temp_fd);
         fclose(input_file);
 
-        return 0;
+        return 1;
     }
 
     lexical_error_count = 0;
@@ -1372,7 +1340,7 @@ int preprocess_file(
             "Error: nombre de archivo temporal demasiado largo\n"
         );
 
-        return 0;
+        return 1;
     }
 
     strcpy(temp_filename, temp_template);
@@ -1385,5 +1353,5 @@ int preprocess_file(
         *preprocessor_errors = preprocessor_error_count;
     }
 
-    return 1;
+    return definitive_error;
 }
