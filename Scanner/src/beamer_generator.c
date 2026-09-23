@@ -6,6 +6,7 @@
 #include "../include/beamer_generator.h"
 
 #define SOURCE_LINES_PER_SLIDE 12
+#define ERRORS_PER_SLIDE 7
 
 /*
  * Statistics used by the presentation.
@@ -1411,16 +1412,15 @@ static void write_error_slide(
         }
     }
 
-    fprintf(
-        file,
-        "\\begin{frame}{Lexical Errors}\n"
-        "\n"
-    );
-
+    /*
+     * No lexical errors.
+     */
     if (error_count == 0) {
 
         fprintf(
             file,
+            "\\begin{frame}{Lexical Errors}\n"
+            "\n"
             "\\centering\n"
             "\\vfill\n"
             "\n"
@@ -1437,76 +1437,156 @@ static void write_error_slide(
         return;
     }
 
-    fprintf(
-        file,
-        "\\centering\n"
-        "\n"
-        "\\vspace{0.25cm}\n"
-        "\n"
-        "{\\large "
-        "\\textbf{%zu lexical error%s found.}"
-        "}\\\\[0.45cm]\n"
-        "\n",
-        error_count,
-        error_count == 1 ? " was" : "s were"
-    );
+    size_t total_slides =
+        (error_count + ERRORS_PER_SLIDE - 1) /
+        ERRORS_PER_SLIDE;
 
-    fprintf(
-        file,
-        "\\renewcommand{\\arraystretch}{1.35}\n"
-        "\n"
-        "\\begin{tabular}{|c|c|c|}\n"
-        "\\hline\n"
-        "\n"
-        "\\rowcolor{blue!15}\n"
-        "\\textbf{Lexeme} & "
-        "\\textbf{Line} & "
-        "\\textbf{Column} \\\\\n"
-        "\\hline\n"
-    );
+    size_t current_error = 0;
+    size_t current_slide = 1;
 
-    for (size_t i = 0; i < token_count; i++) {
+    /*
+     * Search position inside the complete token array.
+     */
+    size_t token_index = 0;
 
-        if (tokens[i].category != CAT_ERROR) {
-            continue;
+    while (current_error < error_count) {
+
+        size_t errors_on_this_slide =
+            error_count - current_error;
+
+        if (errors_on_this_slide > ERRORS_PER_SLIDE) {
+            errors_on_this_slide = ERRORS_PER_SLIDE;
         }
 
         fprintf(
             file,
-            "\\colorbox{errorbg}{"
-            "\\textcolor{errorcolor}{\\textbf{"
+            "\\begin{frame}{Lexical Errors"
         );
 
-        write_latex_escaped(
-            file,
-            tokens[i].lexeme
-        );
+        if (total_slides > 1) {
+
+            fprintf(
+                file,
+                " -- %zu/%zu",
+                current_slide,
+                total_slides
+            );
+        }
 
         fprintf(
             file,
-            "}}}"
-            " & %d & %d \\\\\n"
-            "\\hline\n",
-            tokens[i].line,
-            tokens[i].column
+            "}\n"
+            "\n"
+            "\\centering\n"
+            "\n"
         );
-    }
 
-    fprintf(
-        file,
-        "\\end{tabular}\n"
-        "\n"
-        "\\vspace{0.35cm}\n"
-        "\n"
-        "\\begin{block}{Note}\n"
-        "Each listed lexeme was classified as a lexical error "
-        "by the scanner. The line and column indicate where "
-        "the invalid lexeme was detected in the scanner input.\n"
-        "\\end{block}\n"
-        "\n"
-        "\\end{frame}\n"
-        "\n"
-    );
+        /*
+         * Summary.
+         */
+        if (current_slide == 1) {
+
+            if (error_count == 1) {
+
+                fprintf(
+                    file,
+                    "{\\large\\textbf{"
+                    "1 lexical error was found."
+                    "}}\\\\[0.30cm]\n"
+                );
+
+            } else {
+
+                fprintf(
+                    file,
+                    "{\\large\\textbf{"
+                    "%zu lexical errors were found."
+                    "}}\\\\[0.30cm]\n",
+                    error_count
+                );
+            }
+
+        } else {
+
+            fprintf(
+                file,
+                "{\\small "
+                "Showing errors %zu--%zu of %zu."
+                "}\\\\[0.25cm]\n",
+                current_error + 1,
+                current_error + errors_on_this_slide,
+                error_count
+            );
+        }
+
+        fprintf(
+            file,
+            "\\small\n"
+            "\\renewcommand{\\arraystretch}{1.25}\n"
+            "\n"
+            "\\begin{tabular}{|c|c|c|}\n"
+            "\\hline\n"
+            "\\rowcolor{blue!15}\n"
+            "\\textbf{Lexeme} & "
+            "\\textbf{Line} & "
+            "\\textbf{Column} \\\\\n"
+            "\\hline\n"
+        );
+
+        size_t written = 0;
+
+        while (token_index < token_count &&
+               written < errors_on_this_slide) {
+
+            if (tokens[token_index].category != CAT_ERROR) {
+
+                token_index++;
+                continue;
+            }
+
+            fprintf(
+                file,
+                "\\colorbox{errorbg}{"
+                "\\textcolor{errorcolor}{"
+                "\\textbf{"
+            );
+
+            write_latex_escaped(
+                file,
+                tokens[token_index].lexeme
+            );
+
+            fprintf(
+                file,
+                "}}}"
+                " & %d & %d \\\\\n"
+                "\\hline\n",
+                tokens[token_index].line,
+                tokens[token_index].column
+            );
+
+            written++;
+            token_index++;
+        }
+
+        fprintf(
+            file,
+            "\\end{tabular}\n"
+            "\n"
+            "\\vspace{0.25cm}\n"
+            "\n"
+            "{\\scriptsize "
+            "Line and column indicate where each invalid "
+            "lexeme was detected in the scanner input."
+            "}\n"
+            "\n"
+            "\\end{frame}\n"
+            "\n"
+        );
+
+        current_error += written;
+        current_slide++;
+    }
 }
 
 
