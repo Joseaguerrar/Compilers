@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include "../include/beamer_generator.h"
+
+#define SOURCE_LINES_PER_SLIDE 12
 
 /*
  * Statistics used by the presentation.
@@ -21,6 +24,16 @@ typedef struct {
     size_t total_tokens;
 } BeamerStats;
 
+static void write_code_legend(
+    FILE *file
+);
+
+static int write_source_slides(
+    FILE *file,
+    const char *preprocessed_filename,
+    const Token *tokens,
+    size_t token_count
+);
 
 /*
  * Calculates lexical-category statistics from the tokens
@@ -185,131 +198,371 @@ static void write_styled_token(
         return;
     }
 
+    const char *command = NULL;
+
     switch (token->category) {
 
         case CAT_KEYWORD:
-
-            fprintf(
-                file,
-                "\\textcolor{keywordcolor}{\\textbf{"
-            );
-
-            write_latex_escaped(
-                file,
-                token->lexeme
-            );
-
-            fprintf(file, "}}");
-
+            command = "tokkeyword";
             break;
-
 
         case CAT_IDENTIFIER:
-
-            fprintf(
-                file,
-                "\\textcolor{identifiercolor}{"
-            );
-
-            write_latex_escaped(
-                file,
-                token->lexeme
-            );
-
-            fprintf(file, "}");
-
+            command = "tokidentifier";
             break;
-
 
         case CAT_CONSTANT:
-
-            fprintf(
-                file,
-                "\\textcolor{constantcolor}{\\textbf{"
-            );
-
-            write_latex_escaped(
-                file,
-                token->lexeme
-            );
-
-            fprintf(file, "}}");
-
+            command = "tokconstant";
             break;
-
 
         case CAT_STRING_LITERAL:
-
-            fprintf(
-                file,
-                "\\textcolor{stringcolor}{\\textit{"
-            );
-
-            write_latex_escaped(
-                file,
-                token->lexeme
-            );
-
-            fprintf(file, "}}");
-
+            command = "tokstring";
             break;
-
 
         case CAT_OPERATOR:
-
-            fprintf(
-                file,
-                "\\textcolor{operatorcolor}{\\textbf{"
-            );
-
-            write_latex_escaped(
-                file,
-                token->lexeme
-            );
-
-            fprintf(file, "}}");
-
+            command = "tokoperator";
             break;
-
 
         case CAT_PUNCTUATOR:
-
-            fprintf(
-                file,
-                "\\textcolor{punctuatorcolor}{"
-            );
-
-            write_latex_escaped(
-                file,
-                token->lexeme
-            );
-
-            fprintf(file, "}");
-
+            command = "tokpunctuator";
             break;
-
 
         case CAT_ERROR:
-
-            fprintf(
-                file,
-                "\\colorbox{red!20}{"
-                "\\textcolor{errorcolor}{\\textbf{"
-            );
-
-            write_latex_escaped(
-                file,
-                token->lexeme
-            );
-
-            fprintf(file, "}}}");
-
+            command = "tokerror";
             break;
-
 
         case CAT_EOF:
-            break;
+            return;
     }
+
+    fprintf(
+        file,
+        "(*@\\%s{",
+        command
+    );
+
+    write_latex_escaped(
+        file,
+        token->lexeme
+    );
+
+    fprintf(
+        file,
+        "}@*)"
+    );
+}
+
+static size_t count_source_lines(
+    FILE *input
+) {
+    if (input == NULL) {
+        return 0;
+    }
+
+    size_t lines = 0;
+
+    int character;
+    int last_character = '\n';
+    int has_content = 0;
+
+    rewind(input);
+
+    while ((character = fgetc(input)) != EOF) {
+
+        has_content = 1;
+
+        if (character == '\n') {
+            lines++;
+        }
+
+        last_character = character;
+    }
+
+    /*
+     * Count the last line if the file does not end
+     * with a newline.
+     */
+    if (has_content &&
+        last_character != '\n') {
+
+        lines++;
+    }
+
+    rewind(input);
+
+    return lines;
+}
+
+static void write_source_line(
+    FILE *file,
+    const char *line,
+    size_t line_number,
+    const Token *tokens,
+    size_t token_count,
+    size_t *token_index
+) {
+    if (file == NULL ||
+        line == NULL ||
+        tokens == NULL ||
+        token_index == NULL) {
+
+        return;
+    }
+
+    size_t line_length = strlen(line);
+
+    /*
+     * getline() includes the newline character.
+     * listings will receive the newline separately.
+     */
+    while (line_length > 0 &&
+           (line[line_length - 1] == '\n' ||
+            line[line_length - 1] == '\r')) {
+
+        line_length--;
+    }
+
+    size_t cursor = 0;
+
+    /*
+     * Normally this should not be necessary because
+     * tokens are ordered, but it keeps the function
+     * defensive.
+     */
+    while (*token_index < token_count &&
+           tokens[*token_index].line <
+               (int) line_number) {
+
+        (*token_index)++;
+    }
+
+    while (*token_index < token_count &&
+           tokens[*token_index].line ==
+               (int) line_number) {
+
+        const Token *token =
+            &tokens[*token_index];
+
+        if (token->lexeme == NULL) {
+
+            (*token_index)++;
+            continue;
+        }
+
+        /*
+         * Scanner columns are assumed to start at 1.
+         */
+        size_t token_start = 0;
+
+        if (token->column > 0) {
+            token_start =
+                (size_t) token->column - 1;
+        }
+
+        /*
+         * Prevent invalid positions from reading beyond
+         * the current source line.
+         */
+        if (token_start > line_length) {
+            token_start = line_length;
+        }
+
+        /*
+         * Write all untouched characters before the token.
+         * These are normally spaces or tabs.
+         */
+        if (token_start > cursor) {
+
+            fwrite(
+                line + cursor,
+                sizeof(char),
+                token_start - cursor,
+                file
+            );
+        }
+
+        /*
+         * Replace the original lexeme with the styled
+         * representation of the token.
+         */
+        write_styled_token(
+            file,
+            token
+        );
+
+        size_t token_length =
+            strlen(token->lexeme);
+
+        size_t token_end =
+            token_start + token_length;
+
+        if (token_end > line_length) {
+            token_end = line_length;
+        }
+
+        cursor = token_end;
+
+        (*token_index)++;
+    }
+
+    /*
+     * Write any remaining text after the last token.
+     */
+    if (cursor < line_length) {
+
+        fwrite(
+            line + cursor,
+            sizeof(char),
+            line_length - cursor,
+            file
+        );
+    }
+
+    fputc('\n', file);
+}
+
+static int write_source_slides(
+    FILE *file,
+    const char *preprocessed_filename,
+    const Token *tokens,
+    size_t token_count
+) {
+    if (file == NULL ||
+        preprocessed_filename == NULL ||
+        tokens == NULL) {
+
+        return 0;
+    }
+
+    FILE *input =
+        fopen(
+            preprocessed_filename,
+            "r"
+        );
+
+    if (input == NULL) {
+
+        fprintf(
+            stderr,
+            "Error: could not open "
+            "preprocessed source file: %s\n",
+            preprocessed_filename
+        );
+
+        return 0;
+    }
+
+    size_t total_lines =
+        count_source_lines(input);
+
+    /*
+     * Empty source file.
+     */
+    if (total_lines == 0) {
+
+        fprintf(
+            file,
+            "\\begin{frame}"
+            "{Preprocessed Source Code}\n"
+            "\\centering\n"
+            "\\vfill\n"
+            "The preprocessed source file is empty.\n"
+            "\\vfill\n"
+            "\\end{frame}\n\n"
+        );
+
+        fclose(input);
+
+        return 1;
+    }
+
+    char *line = NULL;
+    size_t line_capacity = 0;
+
+    size_t current_line = 1;
+    size_t token_index = 0;
+
+    while (current_line <= total_lines) {
+
+        size_t first_line =
+            current_line;
+
+        size_t last_line =
+            first_line +
+            SOURCE_LINES_PER_SLIDE - 1;
+
+        if (last_line > total_lines) {
+            last_line = total_lines;
+        }
+
+        /*
+         * lstlisting requires a fragile Beamer frame.
+         */
+        fprintf(
+            file,
+            "\\begin{frame}[fragile]"
+            "{Preprocessed Source Code -- "
+            "Lines %zu--%zu}\n"
+            "\\vspace{-0.15cm}\n"
+            "\n",
+            first_line,
+            last_line
+        );
+
+        fprintf(
+            file,
+            "\\begin{lstlisting}["
+            "style=sourcecode,"
+            "firstnumber=%zu]\n",
+            first_line
+        );
+
+        while (current_line <= last_line) {
+
+            ssize_t read =
+                getline(
+                    &line,
+                    &line_capacity,
+                    input
+                );
+
+            if (read == -1) {
+                break;
+            }
+
+            write_source_line(
+                file,
+                line,
+                current_line,
+                tokens,
+                token_count,
+                &token_index
+            );
+
+            current_line++;
+        }
+
+        fprintf(
+            file,
+            "\\end{lstlisting}\n"
+        );
+
+        /*
+         * Keep the legend visible on every code slide.
+         */
+        write_code_legend(file);
+
+        fprintf(
+            file,
+            "\\end{frame}\n"
+            "\n"
+        );
+    }
+
+    free(line);
+
+    fclose(input);
+
+    return 1;
 }
 
 /*
@@ -339,12 +592,77 @@ static void write_preamble(FILE *file) {
         "\\usepgfplotslibrary{polar}\n"
         "\n"
         "\\definecolor{keywordcolor}{RGB}{30,90,180}\n"
-        "\\definecolor{identifiercolor}{RGB}{30,30,30}\n"
+        "\\definecolor{identifiercolor}{RGB}{35,35,35}\n"
         "\\definecolor{constantcolor}{RGB}{150,40,150}\n"
         "\\definecolor{stringcolor}{RGB}{20,130,70}\n"
         "\\definecolor{operatorcolor}{RGB}{210,100,20}\n"
-        "\\definecolor{punctuatorcolor}{RGB}{90,90,90}\n"
+        "\\definecolor{punctuatorcolor}{RGB}{60,95,130}\n"
         "\\definecolor{errorcolor}{RGB}{190,30,30}\n"
+        "\n"
+        "\\definecolor{keywordbg}{RGB}{220,230,255}\n"
+        "\\definecolor{identifierbg}{RGB}{238,238,238}\n"
+        "\\definecolor{constantbg}{RGB}{245,225,245}\n"
+        "\\definecolor{stringbg}{RGB}{220,245,230}\n"
+        "\\definecolor{operatorbg}{RGB}{255,235,210}\n"
+        "\\definecolor{punctuatorbg}{RGB}{225,235,245}\n"
+        "\\definecolor{errorbg}{RGB}{255,215,215}\n"
+        "\n"
+        "\\setlength{\\fboxsep}{1.2pt}\n"
+        "\n"
+
+        "\\setlength{\\fboxsep}{1.0pt}\n"
+        "\\setlength{\\fboxrule}{0.4pt}\n"
+        "\n"
+
+        "\\newcommand{\\tokkeyword}[1]{"
+        "\\fcolorbox{keywordcolor}{keywordbg}{"
+        "\\textcolor{keywordcolor}{\\texttt{\\textbf{#1}}}}}\n"
+
+        "\\newcommand{\\tokidentifier}[1]{"
+        "\\fcolorbox{identifiercolor}{identifierbg}{"
+        "\\textcolor{identifiercolor}{\\texttt{#1}}}}\n"
+
+        "\\newcommand{\\tokconstant}[1]{"
+        "\\fcolorbox{constantcolor}{constantbg}{"
+        "\\textcolor{constantcolor}{\\texttt{\\textbf{#1}}}}}\n"
+
+        "\\newcommand{\\tokstring}[1]{"
+        "\\fcolorbox{stringcolor}{stringbg}{"
+        "\\textcolor{stringcolor}{\\texttt{\\textit{#1}}}}}\n"
+
+        "\\newcommand{\\tokoperator}[1]{"
+        "\\fcolorbox{operatorcolor}{operatorbg}{"
+        "\\textcolor{operatorcolor}{\\texttt{\\textbf{#1}}}}}\n"
+
+        "\\newcommand{\\tokpunctuator}[1]{"
+        "\\fcolorbox{punctuatorcolor}{punctuatorbg}{"
+        "\\textcolor{punctuatorcolor}{\\texttt{#1}}}}\n"
+
+        "\\newcommand{\\tokerror}[1]{"
+        "\\fcolorbox{errorcolor}{errorbg}{"
+        "\\textcolor{errorcolor}{"
+        "\\texttt{\\textbf{\\textit{#1}}}}}}\n"
+        "\n"
+
+        "\\lstdefinestyle{sourcecode}{\n"
+        "    basicstyle=\\ttfamily\\scriptsize,\n"
+        "    numbers=left,\n"
+        "    numberstyle=\\scriptsize\\color{gray},\n"
+        "    numbersep=6pt,\n"
+        "    showstringspaces=false,\n"
+        "    keepspaces=true,\n"
+        "    columns=fullflexible,\n"
+        "    breaklines=true,\n"
+        "    breakatwhitespace=false,\n"
+        "    tabsize=4,\n"
+        "    frame=single,\n"
+        "    xleftmargin=2.0em,\n"
+        "    framexleftmargin=2.0em,\n"
+        "    aboveskip=0.2cm,\n"
+        "    belowskip=0.1cm,\n"
+        "    escapeinside={(*@}{@*)}\n"
+        "}\n"
+
         "\n"
         "\\lstdefinestyle{cstyle}{\n"
         "    language=C,\n"
@@ -816,40 +1134,83 @@ static void write_results_slide(FILE *file) {
     );
 }
 
-static void write_category_legend_slide(
-    FILE *file
-) {
+static void write_code_legend(FILE *file) {
+
+    fprintf(file,
+        "\\vspace{0.15cm}\n"
+        "\\centering\n"
+        "\\tiny\n"
+        "\n"
+        "\\colorbox{keywordbg}{"
+        "\\textcolor{keywordcolor}{\\textbf{Keyword}}}"
+        "\\hspace{0.12cm}\n"
+
+        "\\colorbox{identifierbg}{"
+        "\\textcolor{identifiercolor}{Identifier}}"
+        "\\hspace{0.12cm}\n"
+
+        "\\colorbox{constantbg}{"
+        "\\textcolor{constantcolor}{\\textbf{Constant}}}"
+        "\\hspace{0.12cm}\n"
+
+        "\\colorbox{stringbg}{"
+        "\\textcolor{stringcolor}{\\textit{String}}}"
+        "\\hspace{0.12cm}\n"
+
+        "\\colorbox{operatorbg}{"
+        "\\textcolor{operatorcolor}{\\textbf{Operator}}}"
+        "\\hspace{0.12cm}\n"
+
+        "\\colorbox{punctuatorbg}{"
+        "\\textcolor{punctuatorcolor}{Punctuator}}"
+        "\\hspace{0.12cm}\n"
+
+        "\\colorbox{errorbg}{"
+        "\\textcolor{errorcolor}{\\textbf{Error}}}\n"
+        "\n"
+    );
+}
+
+static void write_category_legend_slide(FILE *file) {
 
     fprintf(file,
         "\\begin{frame}{Lexical Category Legend}\n"
         "\n"
         "\\centering\n"
         "\n"
+        "\\vspace{0.3cm}\n"
+        "\n"
         "\\begin{tabular}{ll}\n"
         "\\textbf{Category} & "
-        "\\textbf{Representation} \\\\ \\hline\n"
+        "\\textbf{Visual Representation} \\\\ \\hline\n"
         "\n"
 
         "Keyword & "
-        "\\textcolor{keywordcolor}{\\textbf{keyword}} \\\\\n"
+        "\\colorbox{keywordbg}{"
+        "\\textcolor{keywordcolor}{\\textbf{keyword}}} \\\\[0.18cm]\n"
 
         "Identifier & "
-        "\\textcolor{identifiercolor}{identifier} \\\\\n"
+        "\\colorbox{identifierbg}{"
+        "\\textcolor{identifiercolor}{identifier}} \\\\[0.18cm]\n"
 
         "Constant & "
-        "\\textcolor{constantcolor}{\\textbf{constant}} \\\\\n"
+        "\\colorbox{constantbg}{"
+        "\\textcolor{constantcolor}{\\textbf{constant}}} \\\\[0.18cm]\n"
 
         "String literal & "
-        "\\textcolor{stringcolor}{\\textit{string}} \\\\\n"
+        "\\colorbox{stringbg}{"
+        "\\textcolor{stringcolor}{\\textit{string}}} \\\\[0.18cm]\n"
 
         "Operator & "
-        "\\textcolor{operatorcolor}{\\textbf{operator}} \\\\\n"
+        "\\colorbox{operatorbg}{"
+        "\\textcolor{operatorcolor}{\\textbf{operator}}} \\\\[0.18cm]\n"
 
         "Punctuator & "
-        "\\textcolor{punctuatorcolor}{punctuator} \\\\\n"
+        "\\colorbox{punctuatorbg}{"
+        "\\textcolor{punctuatorcolor}{punctuator}} \\\\[0.18cm]\n"
 
         "Lexical error & "
-        "\\colorbox{red!20}{"
+        "\\colorbox{errorbg}{"
         "\\textcolor{errorcolor}{\\textbf{error}}} \\\\\n"
 
         "\\end{tabular}\n"
@@ -1357,16 +1718,17 @@ int beamer_generate(
     write_results_slide(file);
 
     write_category_legend_slide(file);
-    /*
-    * Later:
-    *
-    * write_source_slides(
-    *     file,
-    *     preprocessed_filename,
-    *     tokens,
-    *     token_count
-    * );
-    */
+    
+    if (!write_source_slides(
+            file,
+            preprocessed_filename,
+            tokens,
+            token_count)) {
+
+        fclose(file);
+
+        return 0;
+    }
 
     write_statistics_slide(
         file,
