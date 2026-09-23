@@ -21,10 +21,8 @@ static int set_token(TokenType type, TokenCategory cat) {
 %option noyywrap
 %option nounput noinput
 
- // Change the prefix of the generated functions to avoid conflicts with other lexers
 %option prefix="sc_"
 
-/* regex for literals & numbers */
 DIGIT       [0-9]
 HEX         [0-9a-fA-F]
 LETTER      [a-zA-Z_]
@@ -37,7 +35,7 @@ FLOAT       ({DIGIT}+\.{DIGIT}*|\.{DIGIT}+)([eE][+-]?{DIGIT}+)?[fFlL]?|{DIGIT}+[
 
 %%
 
-[ \t\r]+    { col_num += yyleng; /* Ignore spaces */ }
+[ \t\r]+    { col_num += yyleng; }
 \n          { line_num++; col_num = 1; }
 
 "auto"      { return set_token(TOK_AUTO, CAT_KEYWORD); }

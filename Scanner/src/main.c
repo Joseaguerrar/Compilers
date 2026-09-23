@@ -21,11 +21,6 @@
 #define LATEX_LOG_FILENAME \
     "presentation/pdflatex.out"
 
-
-/*
- * Releases every lexeme allocated by the scanner and
- * then releases the token array itself.
- */
 static void free_tokens(
     Token *tokens,
     size_t token_count
@@ -41,11 +36,6 @@ static void free_tokens(
     free(tokens);
 }
 
-
-/*
- * Runs the lexical scanner and stores every token
- * dynamically in memory.
- */
 static int scan_file(
     const char *filename,
     Token **tokens,
@@ -85,10 +75,6 @@ static int scan_file(
 
         Token token = Get_Token();
 
-        /*
-         * EOF is useful to stop scanning but does not need
-         * to be stored for the presentation.
-         */
         if (token.code == TOK_EOF) {
 
             free(token.lexeme);
@@ -140,10 +126,6 @@ static int scan_file(
     return 1;
 }
 
-
-/*
- * Compiles the generated Beamer source.
- */
 static int compile_beamer(void) {
 
     const char *command =
@@ -153,11 +135,6 @@ static int compile_beamer(void) {
         "-output-directory=presentation "
         "presentation/presentation.tex "
         ">" LATEX_LOG_FILENAME " 2>&1";
-
-    /*
-     * Beamer is compiled twice so navigation information
-     * and auxiliary data are generated correctly.
-     */
 
     if (system(command) != 0) {
 
@@ -186,10 +163,6 @@ static int compile_beamer(void) {
     return 1;
 }
 
-
-/*
- * Opens the generated PDF using Evince in presentation mode.
- */
 static void show_pdf(void) {
 
     system(
@@ -215,9 +188,6 @@ int main(
         return EXIT_FAILURE;
     }
 
-    /*
-     * Ensure the output directory exists.
-     */
     if (mkdir("presentation", 0755) == -1 &&
         errno != EEXIST) {
 
@@ -326,11 +296,6 @@ int main(
         return EXIT_FAILURE;
     }
 
-
-    /*
-     * Tokens are no longer necessary after the .tex
-     * source has been generated.
-     */
     free_tokens(
         tokens,
         token_count
