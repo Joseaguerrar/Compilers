@@ -12,7 +12,6 @@
     #define MAX_KEY 128
     #define MAX_VALUE 1024
     #define MAX_DEPTH 32
-    #define MAX_TYPES 9
     #define MAX_ARGS 32
 
     typedef enum {
@@ -26,9 +25,6 @@
         M_FUNCTION,
         M_EMPTY
     } MacroType;
-
-    static const char* TYPE_NAME[MAX_TYPES] = 
-    {"int", "double", "string", "char", "ident", "expr", "expanded", "function", "empty"};
 
     typedef struct {
         char* key;
@@ -50,11 +46,11 @@
     static FILE* include_files[MAX_DEPTH];
     static int include_depth = 0;
 
-    static void print_macros() {
-        for (int i = 0; i < macro_count; i++) {
-            printf("\n%s\n%s\n%d\n", macro_table[i].key,macro_table[i].value, macro_table[i].type );
-        }
-    }
+    static int expand_macro_value(const char* value, char* output,
+                              size_t output_size, int depth,
+                              const Macro** pending);
+
+    static void handle_function_call(const Macro* macro, const char* name);
 
     static int macro_insert(const char* key, const char* value, const MacroType type,
                             char** args, int arg_count) {
@@ -453,9 +449,6 @@
         return 1;
     }
 
-    static int expand_macro_value(const char* value, char* output,
-                              size_t output_size, int depth,
-                              const Macro** pending);
 
     static size_t skip_literal(const char* text, size_t i) {
         char quote = text[i++];
@@ -913,8 +906,6 @@
 
         return 1;
     }
-
-    static void handle_function_call(const Macro* macro, const char* name);
 %}
 
 %option prefix="pp_"
