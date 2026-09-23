@@ -30,15 +30,34 @@ OCTAL       [0-7]
 LETTER      [a-zA-Z_]
 IDENT       {LETTER}({LETTER}|{DIGIT})*
 
-INT_DEC     [1-9]{DIGIT}*|0
+/* Integer constants */
+INT_DEC     [1-9]{DIGIT}*
 INT_HEX     0[xX]{HEX}+
-INT_OCT     0[0-7]+
+INT_OCT     0{OCTAL}*
+
+USUFF       [uU]
+LSUFF       [lL]
+LLSUFF      (ll|LL)
+
+INT_SUFFIX  ({USUFF}({LLSUFF}|{LSUFF})?|({LLSUFF}|{LSUFF}){USUFF}?)
+
+/* Decimal floating constants */
 FLOAT       ({DIGIT}+\.{DIGIT}*|\.{DIGIT}+)([eE][+-]?{DIGIT}+)?[fFlL]?|{DIGIT}+[eE][+-]?{DIGIT}+[fFlL]?
 
-BAD_OCT     0[0-7]*[89][0-9]*
+/* Hexadecimal floating constants */
+FLOAT_SUFFIX    [fFlL]
+BIN_EXP         [pP][+-]?{DIGIT}+
+HEX_FRAC        ({HEX}+\.{HEX}*|\.{HEX}+)
+HEX_FLOAT       0[xX](({HEX_FRAC}|{HEX}+){BIN_EXP}){FLOAT_SUFFIX}?
+
+BAD_OCT         0[0-7]*[89][0-9]*
 BAD_HEX         0[xX]
 BAD_EXP_INT     {DIGIT}+[eE][+-]?
 BAD_EXP_FLOAT   ({DIGIT}+\.{DIGIT}*|\.{DIGIT}+)[eE][+-]?
+
+/*Literal prefixes*/
+CHAR_PREFIX     (L|u|U)
+STRING_PREFIX   (u8|u|U|L)
 
 /* Valid C escape sequences */
 ESC_SIMPLE  \\['"?\\abfnrtv]
@@ -89,20 +108,37 @@ CHAR_CHAR   ([^\\'\n]|{ESCAPE})
 "void"      { return set_token(TOK_VOID, CAT_KEYWORD); }
 "volatile"  { return set_token(TOK_VOLATILE, CAT_KEYWORD); }
 "while"     { return set_token(TOK_WHILE, CAT_KEYWORD); }
+"inline"    { return set_token(TOK_INLINE, CAT_KEYWORD); }
+"restrict"  { return set_token(TOK_RESTRICT, CAT_KEYWORD); }
+
+"_Alignas"  { return set_token(TOK_ALIGNAS, CAT_KEYWORD); }
+"_Alignof"  { return set_token(TOK_ALIGNOF, CAT_KEYWORD); }
+"_Atomic"   { return set_token(TOK_ATOMIC, CAT_KEYWORD); }
+"_Bool"     { return set_token(TOK_BOOL, CAT_KEYWORD); }
+"_Complex"  { return set_token(TOK_COMPLEX, CAT_KEYWORD); }
+"_Generic"  { return set_token(TOK_GENERIC, CAT_KEYWORD); }
+"_Imaginary" { return set_token(TOK_IMAGINARY, CAT_KEYWORD); }
+"_Noreturn" { return set_token(TOK_NORETURN, CAT_KEYWORD); }
+"_Static_assert" { return set_token(TOK_STATIC_ASSERT, CAT_KEYWORD); }
+"_Thread_local" { return set_token(TOK_THREAD_LOCAL, CAT_KEYWORD); }
 
  /* malformed numeric literals */
-{BAD_OCT}                     { return set_token(TOK_ERROR, CAT_ERROR);}
+{BAD_OCT} {return set_token(TOK_ERROR, CAT_ERROR);}
 
-{BAD_HEX}                     { return set_token(TOK_ERROR, CAT_ERROR);}
+{BAD_HEX} {return set_token(TOK_ERROR, CAT_ERROR);}
 
-{BAD_EXP_FLOAT}               { return set_token(TOK_ERROR, CAT_ERROR);}
+{BAD_EXP_FLOAT} {return set_token(TOK_ERROR, CAT_ERROR);}
 
-{BAD_EXP_INT}                 { return set_token(TOK_ERROR, CAT_ERROR);}
-{INT_DEC}|{INT_HEX}|{INT_OCT} { return set_token(TOK_INT_CONST, CAT_CONSTANT); }
-{FLOAT}                       { return set_token(TOK_FLOAT_CONST, CAT_CONSTANT); }
+{BAD_EXP_INT} {return set_token(TOK_ERROR, CAT_ERROR);}
+
+{HEX_FLOAT} {return set_token(TOK_FLOAT_CONST, CAT_CONSTANT);}
+
+({INT_HEX}|{INT_DEC}|{INT_OCT})({INT_SUFFIX})? {return set_token(TOK_INT_CONST, CAT_CONSTANT);}
+
+{FLOAT} {return set_token(TOK_FLOAT_CONST, CAT_CONSTANT);}
 
  /* Valid character constant */
-\'{CHAR_CHAR}+\' {
+({CHAR_PREFIX})?\'{CHAR_CHAR}+\' {
     return set_token(
         TOK_CHAR_CONST,
         CAT_CONSTANT
@@ -127,7 +163,7 @@ CHAR_CHAR   ([^\\'\n]|{ESCAPE})
 
 
  /* Valid string literal */
-\"{STRING_CHAR}*\" {
+({STRING_PREFIX})?\"{STRING_CHAR}*\" {
     return set_token(
         TOK_STRING_LITERAL,
         CAT_STRING_LITERAL
@@ -135,7 +171,7 @@ CHAR_CHAR   ([^\\'\n]|{ESCAPE})
 }
 
  /* Invalid escape inside a closed string */
-\"([^\\\"\n]|\\.)*\" {
+({STRING_PREFIX})?\"([^\\\"\n]|\\.)*\" {
     return set_token(
         TOK_ERROR,
         CAT_ERROR
@@ -143,7 +179,7 @@ CHAR_CHAR   ([^\\'\n]|{ESCAPE})
 }
 
  /* Unterminated string */
-\"([^\\\"\n]|\\.)* {
+({STRING_PREFIX})?\"([^\\\"\n]|\\.)* {
     return set_token(
         TOK_ERROR,
         CAT_ERROR
@@ -201,6 +237,15 @@ CHAR_CHAR   ([^\\'\n]|{ESCAPE})
 "."         { return set_token(TOK_DOT, CAT_PUNCTUATOR); }
 "##"        { return set_token(TOK_DOUBLE_HASH, CAT_PUNCTUATOR); }
 "#"         { return set_token(TOK_HASH, CAT_PUNCTUATOR); }
+"%:%:"      { return set_token(TOK_DOUBLE_HASH, CAT_PUNCTUATOR); }
+
+"<:"        { return set_token(TOK_LBRACKET, CAT_PUNCTUATOR); }
+":>"        { return set_token(TOK_RBRACKET, CAT_PUNCTUATOR); }
+
+"<%"        { return set_token(TOK_LBRACE, CAT_PUNCTUATOR); }
+"%>"        { return set_token(TOK_RBRACE, CAT_PUNCTUATOR); }
+
+"%:"        { return set_token(TOK_HASH, CAT_PUNCTUATOR); }
 
 .           { return set_token(TOK_ERROR, CAT_ERROR); }
 <<EOF>>     { return set_token(TOK_EOF, CAT_EOF); }
