@@ -248,37 +248,67 @@ static void write_title_slide(FILE *file) {
  */
 static void write_process_slide(FILE *file) {
 
-    fprintf(file,
-        "\\begin{frame}{General Process}\n"
+     fprintf(file,
+        "\\begin{frame}{General Processing Pipeline}\n"
         "\n"
         "\\centering\n"
         "\n"
         "\\begin{tikzpicture}[\n"
-        "    node distance=1.4cm,\n"
         "    box/.style={\n"
         "        draw,\n"
         "        rounded corners,\n"
-        "        minimum width=3.4cm,\n"
-        "        minimum height=0.8cm,\n"
-        "        align=center\n"
+        "        minimum width=2.6cm,\n"
+        "        minimum height=0.75cm,\n"
+        "        align=center,\n"
+        "        font=\\small\n"
         "    }\n"
         "]\n"
         "\n"
-        "\\node[box] (source) {C source file};\n"
-        "\\node[box, below of=source] "
-        "(preprocessor) {Preprocessor};\n"
-        "\\node[box, below of=preprocessor] "
-        "(temporary) {Temporary file};\n"
-        "\\node[box, below of=temporary] "
-        "(scanner) {Lexical scanner};\n"
-        "\\node[box, below of=scanner] "
-        "(tokens) {Tokens and statistics};\n"
+
+        /* Top row */
+        "\\node[box] (source) at (-4.8,1.5) "
+        "{C Source File};\n"
+
+        "\\node[box] (preprocessor) at (-1.6,1.5) "
+        "{Preprocessor};\n"
+
+        "\\node[box] (temporary) at (1.6,1.5) "
+        "{Temporary File};\n"
+
+        "\\node[box] (scanner) at (4.8,1.5) "
+        "{Lexical Scanner};\n"
         "\n"
+
+        /* Bottom row */
+        "\\node[box] (tokens) at (4.8,-1.0) "
+        "{Token Collection};\n"
+
+        "\\node[box] (beamer) at (1.6,-1.0) "
+        "{Beamer Generator};\n"
+
+        "\\node[box] (latex) at (-1.6,-1.0) "
+        "{pdflatex};\n"
+
+        "\\node[box] (pdf) at (-4.8,-1.0) "
+        "{PDF Presentation};\n"
+        "\n"
+
+        /* Top row arrows */
         "\\draw[->, thick] (source) -- (preprocessor);\n"
         "\\draw[->, thick] (preprocessor) -- (temporary);\n"
         "\\draw[->, thick] (temporary) -- (scanner);\n"
+        "\n"
+
+        /* Turn to second row */
         "\\draw[->, thick] (scanner) -- (tokens);\n"
         "\n"
+
+        /* Bottom row arrows */
+        "\\draw[->, thick] (tokens) -- (beamer);\n"
+        "\\draw[->, thick] (beamer) -- (latex);\n"
+        "\\draw[->, thick] (latex) -- (pdf);\n"
+        "\n"
+
         "\\end{tikzpicture}\n"
         "\n"
         "\\end{frame}\n"
@@ -287,41 +317,81 @@ static void write_process_slide(FILE *file) {
 }
 
 
-/*
- * Writes a general explanation of Flex.
- */
-static void write_flex_slide(FILE *file) {
+static void write_input_source_slide(
+    FILE *file,
+    const char *source_filename
+) {
 
     fprintf(file,
-        "\\begin{frame}{Using Flex}\n"
+        "\\begin{frame}{1. Input Source File}\n"
+        "\n"
+        "The execution begins with the source file received "
+        "through the command line.\n"
+        "\n"
+        "\\vspace{0.35cm}\n"
+        "\n"
+        "\\begin{block}{Input File}\n"
+        "\\texttt{"
+    );
+
+    write_latex_escaped(
+        file,
+        source_filename
+    );
+
+    fprintf(file,
+        "}\n"
+        "\\end{block}\n"
+        "\n"
+        "\\vspace{0.25cm}\n"
         "\n"
         "\\begin{itemize}\n"
-        "    \\item Flex allows patterns to be defined using "
-        "regular expressions.\n"
+        "    \\item This is the original file provided by the user.\n"
         "\n"
-        "    \\item Each pattern is associated with an action "
-        "written in C.\n"
+        "    \\item It may contain C code, preprocessing directives, "
+        "macros, comments, and included files.\n"
         "\n"
-        "    \\item From a \\texttt{.l} file, Flex generates "
-        "C source code.\n"
-        "\n"
-        "    \\item The scanner processes the input and recognizes "
-        "the different lexemes.\n"
-        "\n"
-        "    \\item Each lexeme is classified into "
-        "a lexical category.\n"
+        "    \\item The lexical scanner does not process this "
+        "file directly.\n"
         "\\end{itemize}\n"
         "\n"
-        "\\vspace{0.4cm}\n"
+        "\\end{frame}\n"
         "\n"
-        "\\begin{block}{Basic Flow}\n"
-        "\\texttt{scanner.l}\n"
-        "$\\rightarrow$\n"
-        "\\texttt{Flex}\n"
-        "$\\rightarrow$\n"
-        "\\texttt{scanner.lex.c}\n"
-        "$\\rightarrow$\n"
-        "\\texttt{executable}\n"
+    );
+}
+
+static void write_preprocessing_slide(FILE *file) {
+
+    fprintf(file,
+        "\\begin{frame}{2. Preprocessing}\n"
+        "\n"
+        "Before lexical analysis, the original source is processed "
+        "by the preprocessing stage.\n"
+        "\n"
+        "\\vspace{0.30cm}\n"
+        "\n"
+        "\\begin{itemize}\n"
+        "\n"
+        "    \\item Processes supported "
+        "\\texttt{\\#include} directives.\n"
+        "\n"
+        "    \\item Processes "
+        "\\texttt{\\#define} directives.\n"
+        "\n"
+        "    \\item Recursively expands defined macros.\n"
+        "\n"
+        "    \\item Removes both forms of C comments.\n"
+        "\n"
+        "    \\item Reports preprocessing and comment-related "
+        "errors whenever they are detected.\n"
+        "\n"
+        "\\end{itemize}\n"
+        "\n"
+        "\\vspace{0.25cm}\n"
+        "\n"
+        "\\begin{block}{Result}\n"
+        "The resulting source is written to a dynamically named "
+        "temporary file.\n"
         "\\end{block}\n"
         "\n"
         "\\end{frame}\n"
@@ -329,48 +399,252 @@ static void write_flex_slide(FILE *file) {
     );
 }
 
-
-/*
- * Writes information about the original source file and the
- * temporary preprocessed file used as input for the scanner.
- */
-static void write_input_slide(
+static void write_temporary_file_slide(
     FILE *file,
     const char *source_filename,
     const char *preprocessed_filename
 ) {
 
     fprintf(file,
-        "\\begin{frame}{Processed Files}\n"
+        "\\begin{frame}{3. Temporary Preprocessed File}\n"
         "\n"
-        "\\begin{block}{Source file}\n"
+        "The preprocessor writes the transformed source to a "
+        "dynamically named temporary file.\n"
+        "\n"
+        "\\vspace{0.25cm}\n"
+        "\n"
+        "\\begin{block}{Original Source}\n"
         "\\texttt{"
     );
 
-    write_latex_escaped(file, source_filename);
+    write_latex_escaped(
+        file,
+        source_filename
+    );
 
     fprintf(file,
         "}\n"
         "\\end{block}\n"
         "\n"
-        "\\begin{block}{File after preprocessing}\n"
+        "\\begin{block}{Scanner Input}\n"
         "\\texttt{"
     );
 
-    write_latex_escaped(file, preprocessed_filename);
+    write_latex_escaped(
+        file,
+        preprocessed_filename
+    );
 
     fprintf(file,
         "}\n"
         "\\end{block}\n"
         "\n"
-        "The scanner uses the temporary file generated by "
-        "the preprocessor as its actual input.\n"
+        "\\begin{itemize}\n"
+        "    \\item The filename is generated dynamically "
+        "under the Linux temporary directory.\n"
+        "\n"
+        "    \\item The program does not delete the file after "
+        "the analysis finishes.\n"
+        "\n"
+        "    \\item Because it resides under \\texttt{/tmp}, "
+        "it may later be removed according to the operating "
+        "system's temporary-file policy.\n"
+        "\n"
+        "    \\item This file is the actual input of the "
+        "lexical scanner.\n"
+        "\\end{itemize}\n"
+        "\n"
+        "\\begin{block}{Inspection}\n"
+        "\\texttt{cat "
+    );
+
+    write_latex_escaped(
+        file,
+        preprocessed_filename
+    );
+
+    fprintf(file,
+        "}\n"
+        "\\end{block}\n"
         "\n"
         "\\end{frame}\n"
         "\n"
     );
 }
 
+static void write_scanning_slide(FILE *file) {
+
+    fprintf(file,
+        "\\begin{frame}{4. Lexical Scanning with Flex}\n"
+        "\n"
+        "The scanner opens the preprocessed file and analyzes "
+        "the input one lexeme at a time.\n"
+        "\n"
+        "\\vspace{0.30cm}\n"
+        "\n"
+        "\\begin{itemize}\n"
+        "\n"
+        "    \\item Lexical patterns are defined in "
+        "\\texttt{scanner.l} using Flex regular expressions.\n"
+        "\n"
+        "    \\item Flex generates the scanner implementation "
+        "in C.\n"
+        "\n"
+        "    \\item The program repeatedly invokes "
+        "\\texttt{Get\\_Token()}.\n"
+        "\n"
+        "    \\item Each token stores its type, category, lexeme, "
+        "line, and column.\n"
+        "\n"
+        "    \\item Scanning continues until "
+        "\\texttt{TOK\\_EOF} is returned.\n"
+        "\n"
+        "\\end{itemize}\n"
+        "\n"
+        "\\begin{block}{Scanner Flow}\n"
+        "\\centering\n"
+        "\\texttt{Temporary File}\n"
+        "$\\rightarrow$\n"
+        "\\texttt{Get\\_Token()}\n"
+        "$\\rightarrow$\n"
+        "\\texttt{Token}\n"
+        "$\\rightarrow \\cdots \\rightarrow$\n"
+        "\\texttt{TOK\\_EOF}\n"
+        "\\end{block}\n"
+        "\n"
+        "\\end{frame}\n"
+        "\n"
+    );
+}
+
+static void write_token_collection_slide(FILE *file) {
+
+    fprintf(file,
+        "\\begin{frame}{5. Token Collection}\n"
+        "\n"
+        "Every token returned by the scanner is stored in "
+        "memory for later processing.\n"
+        "\n"
+        "\\vspace{0.30cm}\n"
+        "\n"
+        "\\begin{itemize}\n"
+        "\n"
+        "    \\item The token array starts with capacity for "
+        "128 elements.\n"
+        "\n"
+        "    \\item Each recognized token is appended to "
+        "the array.\n"
+        "\n"
+        "    \\item When the array becomes full, its capacity "
+        "is doubled using \\texttt{realloc()}.\n"
+        "\n"
+        "    \\item \\texttt{TOK\\_EOF} stops the scanning loop "
+        "but is not stored as presentation data.\n"
+        "\n"
+        "\\end{itemize}\n"
+        "\n"
+        "\\begin{block}{Collected Data}\n"
+        "\\centering\n"
+        "\\texttt{Token[]} + \\texttt{token\\_count}\n"
+        "\\end{block}\n"
+        "\n"
+        "\\end{frame}\n"
+        "\n"
+    );
+}
+
+static void write_beamer_generation_slide(FILE *file) {
+
+    fprintf(file,
+        "\\begin{frame}{6. Beamer Generation}\n"
+        "\n"
+        "Once scanning is complete, the collected information "
+        "is passed to the Beamer generator.\n"
+        "\n"
+        "\\vspace{0.30cm}\n"
+        "\n"
+        "\\begin{itemize}\n"
+        "\n"
+        "    \\item Receives the original source filename.\n"
+        "\n"
+        "    \\item Receives the preprocessed temporary filename.\n"
+        "\n"
+        "    \\item Receives the complete token array and "
+        "token count.\n"
+        "\n"
+        "    \\item Calculates lexical-category statistics.\n"
+        "\n"
+        "    \\item Generates tables, charts, lexical-error "
+        "reports, and presentation content.\n"
+        "\n"
+        "\\end{itemize}\n"
+        "\n"
+        "\\begin{block}{Generated File}\n"
+        "\\centering\n"
+        "\\texttt{presentation/presentation.tex}\n"
+        "\\end{block}\n"
+        "\n"
+        "\\end{frame}\n"
+        "\n"
+    );
+}
+
+
+static void write_pdf_generation_slide(FILE *file) {
+
+    fprintf(file,
+        "\\begin{frame}{7. PDF Generation and Visualization}\n"
+        "\n"
+        "After the Beamer source has been generated, the final "
+        "presentation is produced automatically.\n"
+        "\n"
+        "\\vspace{0.35cm}\n"
+        "\n"
+        "\\begin{itemize}\n"
+        "\n"
+        "    \\item \\texttt{pdflatex} compiles the generated "
+        "LaTeX source into a PDF document.\n"
+        "\n"
+        "    \\item Compilation output is redirected to "
+        "\\texttt{presentation/pdflatex.out} for diagnostics.\n"
+        "\n"
+        "    \\item If the compilation succeeds, the PDF is "
+        "opened automatically with Evince in presentation mode.\n"
+        "\n"
+        "\\end{itemize}\n"
+        "\n"
+        "\\begin{block}{Final Output}\n"
+        "\\centering\n"
+        "\\texttt{presentation/presentation.pdf}\n"
+        "\\end{block}\n"
+        "\n"
+        "\\end{frame}\n"
+        "\n"
+    );
+}
+
+static void write_results_slide(FILE *file) {
+
+    fprintf(file,
+        "\\begin{frame}{Results}\n"
+        "\n"
+        "\\centering\n"
+        "\n"
+        "\\vfill\n"
+        "\n"
+        "{\\Huge\\bfseries Scanning Results}\\\\[0.45cm]\n"
+        "\n"
+        "{\\large\n"
+        "Preprocessed source code, lexical statistics, "
+        "category distribution, and detected errors\n"
+        "}\n"
+        "\n"
+        "\\vfill\n"
+        "\n"
+        "\\end{frame}\n"
+        "\n"
+    );
+}
 
 /*
  * Writes a summary table containing the lexical categories
@@ -846,13 +1120,38 @@ int beamer_generate(
 
     write_process_slide(file);
 
-    write_flex_slide(file);
+    write_input_source_slide(
+        file,
+        source_filename
+    );
 
-    write_input_slide(
+    write_preprocessing_slide(file);
+
+    write_temporary_file_slide(
         file,
         source_filename,
         preprocessed_filename
     );
+
+    write_scanning_slide(file);
+
+    write_token_collection_slide(file);
+
+    write_beamer_generation_slide(file);
+
+    write_pdf_generation_slide(file);
+
+    write_results_slide(file);
+    /*
+    * Later:
+    *
+    * write_source_slides(
+    *     file,
+    *     preprocessed_filename,
+    *     tokens,
+    *     token_count
+    * );
+    */
 
     write_statistics_slide(
         file,
@@ -874,14 +1173,6 @@ int beamer_generate(
         tokens,
         token_count
     );
-
-    /*
-     * Pending:
-     *
-     * Generate slides containing the preprocessed source
-     * with every lexeme colored according to the category
-     * returned by the scanner.
-     */
 
     write_end_slide(file);
 
