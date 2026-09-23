@@ -226,7 +226,7 @@ int main(
         return EXIT_FAILURE;
     }
 
-    printf(
+    /*printf(
         "Archivo temporal generado: %s\n",
         temp_filename
     );
@@ -239,7 +239,7 @@ int main(
     printf(
         "Errores de preprocesador: %d\n",
         preprocessing_errors
-    );
+    );*/
 
 
     /*
@@ -264,10 +264,10 @@ int main(
         return EXIT_FAILURE;
     }
 
-    printf(
+    /*printf(
         "Tokens encontrados: %zu\n",
         token_count
-    );
+    );*/
 
 
     /*
@@ -322,10 +322,10 @@ int main(
 
     show_pdf();
 
-    printf(
+    /*printf(
         "Presentación generada: %s\n",
         PDF_FILENAME
-    );
+    );*/
 
     return EXIT_SUCCESS;
 }
