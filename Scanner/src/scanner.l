@@ -71,6 +71,8 @@ ESCAPE      ({ESC_SIMPLE}|{ESC_OCTAL}|{ESC_HEX}|{ESC_UCN})
 STRING_CHAR ([^\\\"\n]|{ESCAPE})
 CHAR_CHAR   ([^\\'\n]|{ESCAPE})
 
+PP_NUMBER   ({DIGIT}|\.{DIGIT})([A-Za-z_0-9.]|[eEpP][+-])*
+
 %%
 
 [ \t\r]+    { col_num += yyleng; }
@@ -136,6 +138,10 @@ CHAR_CHAR   ([^\\'\n]|{ESCAPE})
 ({INT_HEX}|{INT_DEC}|{INT_OCT})({INT_SUFFIX})? {return set_token(TOK_INT_CONST, CAT_CONSTANT);}
 
 {FLOAT} {return set_token(TOK_FLOAT_CONST, CAT_CONSTANT);}
+
+{PP_NUMBER} {
+    return set_token(TOK_ERROR, CAT_ERROR);
+}
 
  /* Valid character constant */
 ({CHAR_PREFIX})?\'{CHAR_CHAR}+\' {
