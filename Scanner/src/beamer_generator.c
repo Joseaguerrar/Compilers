@@ -221,39 +221,6 @@ static void write_code_escaped(
     }
 }
 
-static const char *category_color(
-    TokenCategory category
-) {
-    switch (category) {
-
-        case CAT_KEYWORD:
-            return "keywordcolor";
-
-        case CAT_IDENTIFIER:
-            return "identifiercolor";
-
-        case CAT_CONSTANT:
-            return "constantcolor";
-
-        case CAT_STRING_LITERAL:
-            return "stringcolor";
-
-        case CAT_OPERATOR:
-            return "operatorcolor";
-
-        case CAT_PUNCTUATOR:
-            return "punctuatorcolor";
-
-        case CAT_ERROR:
-            return "errorcolor";
-
-        case CAT_EOF:
-            return "black";
-    }
-
-    return "black";
-}
-
 static void write_styled_token(
     FILE *file,
     const Token *token
@@ -511,7 +478,7 @@ static int write_source_slides(
         fprintf(
             stderr,
             "Error: could not open "
-            "preprocessed source file: %s\n",
+            "scanned source file: %s\n",
             preprocessed_filename
         );
 
@@ -529,10 +496,10 @@ static int write_source_slides(
         fprintf(
             file,
             "\\begin{frame}"
-            "{Preprocessed Source Code}\n"
+            "{Scanned Source Code}\n"
             "\\centering\n"
             "\\vfill\n"
-            "The preprocessed source file is empty.\n"
+            "The scanned source file is empty.\n"
             "\\vfill\n"
             "\\end{frame}\n\n"
         );
@@ -567,7 +534,7 @@ static int write_source_slides(
         fprintf(
             file,
             "\\begin{frame}[fragile]"
-            "{Preprocessed Source Code -- "
+            "{Scanned Input Source Code -- "
             "Lines %zu--%zu}\n"
             "\\vspace{-0.15cm}\n"
             "\n",
@@ -651,7 +618,7 @@ static void write_preamble(FILE *file) {
         "\\usepackage[T1]{fontenc}\n"
         "\\usepackage[english]{babel}\n"
         "\\usepackage{listings}\n"
-        "\\usepackage{xcolor}\n"
+        "\\usepackage[table]{xcolor}\n"
         "\\usepackage{tikz}\n"
         "\\usepackage{pgfplots}\n"
         "\n"
@@ -659,20 +626,22 @@ static void write_preamble(FILE *file) {
         "\\usepgfplotslibrary{polar}\n"
         "\n"
         "\\definecolor{keywordcolor}{RGB}{30,90,180}\n"
-        "\\definecolor{identifiercolor}{RGB}{35,35,35}\n"
+        "\\definecolor{identifiercolor}{RGB}{115,70,35}\n"
         "\\definecolor{constantcolor}{RGB}{150,40,150}\n"
         "\\definecolor{stringcolor}{RGB}{20,130,70}\n"
         "\\definecolor{operatorcolor}{RGB}{210,100,20}\n"
-        "\\definecolor{punctuatorcolor}{RGB}{60,95,130}\n"
+        "\\definecolor{punctuatorcolor}{RGB}{150,105,0}\n"
         "\\definecolor{errorcolor}{RGB}{190,30,30}\n"
+        "\\definecolor{commentcolor}{RGB}{100,100,100}\n"
         "\n"
         "\\definecolor{keywordbg}{RGB}{220,230,255}\n"
-        "\\definecolor{identifierbg}{RGB}{238,238,238}\n"
+        "\\definecolor{identifierbg}{RGB}{247,236,224}\n"
         "\\definecolor{constantbg}{RGB}{245,225,245}\n"
         "\\definecolor{stringbg}{RGB}{220,245,230}\n"
         "\\definecolor{operatorbg}{RGB}{255,235,210}\n"
-        "\\definecolor{punctuatorbg}{RGB}{225,235,245}\n"
+        "\\definecolor{punctuatorbg}{RGB}{255,245,190}\n"
         "\\definecolor{errorbg}{RGB}{255,215,215}\n"
+        "\\definecolor{commentbg}{RGB}{245,245,245}\n"
         "\n"
         "\\setlength{\\fboxsep}{1.2pt}\n"
         "\n"
@@ -1233,7 +1202,11 @@ static void write_code_legend(FILE *file) {
         "\\hspace{0.12cm}\n"
 
         "\\colorbox{errorbg}{"
-        "\\textcolor{errorcolor}{\\textbf{Error}}}\n"
+        "\\textcolor{errorcolor}{\\textbf{Error}}}"
+        "\\hspace{0.10cm}\n"
+
+        "\\colorbox{commentbg}{"
+        "\\textcolor{commentcolor}{\\textit{Comment $\\rightarrow$ blank line}}}\n"
         "\n"
     );
 }
@@ -1241,11 +1214,10 @@ static void write_code_legend(FILE *file) {
 static void write_category_legend_slide(FILE *file) {
 
     fprintf(file,
-        "\\begin{frame}{Lexical Category Legend}\n"
+        "\\begin{frame}{Source Display Legend}\n"
         "\n"
         "\\centering\n"
-        "\n"
-        "\\vspace{0.3cm}\n"
+        "\\vspace{0.2cm}\n"
         "\n"
         "\\begin{tabular}{ll}\n"
         "\\textbf{Category} & "
@@ -1254,34 +1226,51 @@ static void write_category_legend_slide(FILE *file) {
 
         "Keyword & "
         "\\colorbox{keywordbg}{"
-        "\\textcolor{keywordcolor}{\\textbf{keyword}}} \\\\[0.18cm]\n"
+        "\\textcolor{keywordcolor}{\\textbf{keyword}}} \\\\[0.15cm]\n"
 
         "Identifier & "
         "\\colorbox{identifierbg}{"
-        "\\textcolor{identifiercolor}{identifier}} \\\\[0.18cm]\n"
+        "\\textcolor{identifiercolor}{identifier}} \\\\[0.15cm]\n"
 
         "Constant & "
         "\\colorbox{constantbg}{"
-        "\\textcolor{constantcolor}{\\textbf{constant}}} \\\\[0.18cm]\n"
+        "\\textcolor{constantcolor}{\\textbf{constant}}} \\\\[0.15cm]\n"
 
         "String literal & "
         "\\colorbox{stringbg}{"
-        "\\textcolor{stringcolor}{\\textit{string}}} \\\\[0.18cm]\n"
+        "\\textcolor{stringcolor}{\\textit{string}}} \\\\[0.15cm]\n"
 
         "Operator & "
         "\\colorbox{operatorbg}{"
-        "\\textcolor{operatorcolor}{\\textbf{operator}}} \\\\[0.18cm]\n"
+        "\\textcolor{operatorcolor}{\\textbf{operator}}} \\\\[0.15cm]\n"
 
         "Punctuator & "
         "\\colorbox{punctuatorbg}{"
-        "\\textcolor{punctuatorcolor}{punctuator}} \\\\[0.18cm]\n"
+        "\\textcolor{punctuatorcolor}{punctuator}} \\\\[0.15cm]\n"
 
         "Lexical error & "
         "\\colorbox{errorbg}{"
-        "\\textcolor{errorcolor}{\\textbf{error}}} \\\\\n"
+        "\\textcolor{errorcolor}{\\textbf{error}}} \\\\[0.15cm]\n"
+
+        "\\hline\n"
+
+        "Removed comment & "
+        "\\colorbox{commentbg}{"
+        "\\textcolor{commentcolor}{\\textit{blank line}}} \\\\\n"
 
         "\\end{tabular}\n"
         "\n"
+
+        "\\vspace{0.35cm}\n"
+
+        "\\vspace{-0.05cm}\n"
+            "\\begin{center}\n"
+            "\\tiny\n"
+            "12 scanner-input lines are displayed per slide. "
+            "Comments are removed during preprocessing, so preserved "
+            "comment-only lines, may appear blank.\n"
+            "\\end{center}\n"
+
         "\\end{frame}\n"
         "\n"
     );
@@ -1402,6 +1391,10 @@ static void write_error_slide(
     const Token *tokens,
     size_t token_count
 ) {
+    if (file == NULL || tokens == NULL) {
+        return;
+    }
+
     size_t error_count = 0;
 
     for (size_t i = 0; i < token_count; i++) {
@@ -1411,59 +1404,98 @@ static void write_error_slide(
         }
     }
 
-    fprintf(file,
+    fprintf(
+        file,
         "\\begin{frame}{Lexical Errors}\n"
         "\n"
     );
 
     if (error_count == 0) {
 
-        fprintf(file,
+        fprintf(
+            file,
+            "\\centering\n"
+            "\\vfill\n"
+            "\n"
             "\\begin{block}{Result}\n"
+            "\\centering\n"
             "No lexical errors were found.\n"
             "\\end{block}\n"
+            "\n"
+            "\\vfill\n"
+            "\\end{frame}\n"
+            "\n"
         );
 
-    } else {
+        return;
+    }
 
-        fprintf(file,
-            "%zu lexical errors were found.\n"
-            "\n"
-            "\\vspace{0.3cm}\n"
-            "\n"
-            "\\begin{tabular}{lll}\n"
-            "\\textbf{Lexeme} & "
-            "\\textbf{Line} & "
-            "\\textbf{Column} \\\\ \\hline\n",
-            error_count
-        );
+    fprintf(
+        file,
+        "\\centering\n"
+        "\n"
+        "\\vspace{0.25cm}\n"
+        "\n"
+        "{\\large "
+        "\\textbf{%zu lexical error%s found.}"
+        "}\\\\[0.45cm]\n"
+        "\n",
+        error_count,
+        error_count == 1 ? " was" : "s were"
+    );
 
-        for (size_t i = 0; i < token_count; i++) {
+    fprintf(
+        file,
+        "\\renewcommand{\\arraystretch}{1.35}\n"
+        "\n"
+        "\\begin{tabular}{|c|c|c|}\n"
+        "\\hline\n"
+        "\n"
+        "\\rowcolor{blue!15}\n"
+        "\\textbf{Lexeme} & "
+        "\\textbf{Line} & "
+        "\\textbf{Column} \\\\\n"
+        "\\hline\n"
+    );
 
-            if (tokens[i].category != CAT_ERROR) {
-                continue;
-            }
+    for (size_t i = 0; i < token_count; i++) {
 
-            fprintf(file, "\\texttt{");
-
-            write_latex_escaped(
-                file,
-                tokens[i].lexeme
-            );
-
-            fprintf(file,
-                "} & %d & %d \\\\\n",
-                tokens[i].line,
-                tokens[i].column
-            );
+        if (tokens[i].category != CAT_ERROR) {
+            continue;
         }
 
-        fprintf(file,
-            "\\end{tabular}\n"
+        fprintf(
+            file,
+            "\\colorbox{errorbg}{"
+            "\\textcolor{errorcolor}{\\textbf{"
+        );
+
+        write_latex_escaped(
+            file,
+            tokens[i].lexeme
+        );
+
+        fprintf(
+            file,
+            "}}}"
+            " & %d & %d \\\\\n"
+            "\\hline\n",
+            tokens[i].line,
+            tokens[i].column
         );
     }
 
-    fprintf(file,
+    fprintf(
+        file,
+        "\\end{tabular}\n"
+        "\n"
+        "\\vspace{0.35cm}\n"
+        "\n"
+        "\\begin{block}{Note}\n"
+        "Each listed lexeme was classified as a lexical error "
+        "by the scanner. The line and column indicate where "
+        "the invalid lexeme was detected in the scanner input.\n"
+        "\\end{block}\n"
         "\n"
         "\\end{frame}\n"
         "\n"
