@@ -141,6 +141,176 @@ static void write_latex_escaped(
     }
 }
 
+static const char *category_color(
+    TokenCategory category
+) {
+    switch (category) {
+
+        case CAT_KEYWORD:
+            return "keywordcolor";
+
+        case CAT_IDENTIFIER:
+            return "identifiercolor";
+
+        case CAT_CONSTANT:
+            return "constantcolor";
+
+        case CAT_STRING_LITERAL:
+            return "stringcolor";
+
+        case CAT_OPERATOR:
+            return "operatorcolor";
+
+        case CAT_PUNCTUATOR:
+            return "punctuatorcolor";
+
+        case CAT_ERROR:
+            return "errorcolor";
+
+        case CAT_EOF:
+            return "black";
+    }
+
+    return "black";
+}
+
+static void write_styled_token(
+    FILE *file,
+    const Token *token
+) {
+    if (file == NULL ||
+        token == NULL ||
+        token->lexeme == NULL) {
+
+        return;
+    }
+
+    switch (token->category) {
+
+        case CAT_KEYWORD:
+
+            fprintf(
+                file,
+                "\\textcolor{keywordcolor}{\\textbf{"
+            );
+
+            write_latex_escaped(
+                file,
+                token->lexeme
+            );
+
+            fprintf(file, "}}");
+
+            break;
+
+
+        case CAT_IDENTIFIER:
+
+            fprintf(
+                file,
+                "\\textcolor{identifiercolor}{"
+            );
+
+            write_latex_escaped(
+                file,
+                token->lexeme
+            );
+
+            fprintf(file, "}");
+
+            break;
+
+
+        case CAT_CONSTANT:
+
+            fprintf(
+                file,
+                "\\textcolor{constantcolor}{\\textbf{"
+            );
+
+            write_latex_escaped(
+                file,
+                token->lexeme
+            );
+
+            fprintf(file, "}}");
+
+            break;
+
+
+        case CAT_STRING_LITERAL:
+
+            fprintf(
+                file,
+                "\\textcolor{stringcolor}{\\textit{"
+            );
+
+            write_latex_escaped(
+                file,
+                token->lexeme
+            );
+
+            fprintf(file, "}}");
+
+            break;
+
+
+        case CAT_OPERATOR:
+
+            fprintf(
+                file,
+                "\\textcolor{operatorcolor}{\\textbf{"
+            );
+
+            write_latex_escaped(
+                file,
+                token->lexeme
+            );
+
+            fprintf(file, "}}");
+
+            break;
+
+
+        case CAT_PUNCTUATOR:
+
+            fprintf(
+                file,
+                "\\textcolor{punctuatorcolor}{"
+            );
+
+            write_latex_escaped(
+                file,
+                token->lexeme
+            );
+
+            fprintf(file, "}");
+
+            break;
+
+
+        case CAT_ERROR:
+
+            fprintf(
+                file,
+                "\\colorbox{red!20}{"
+                "\\textcolor{errorcolor}{\\textbf{"
+            );
+
+            write_latex_escaped(
+                file,
+                token->lexeme
+            );
+
+            fprintf(file, "}}}");
+
+            break;
+
+
+        case CAT_EOF:
+            break;
+    }
+}
 
 /*
  * Writes the LaTeX preamble.
@@ -646,6 +816,49 @@ static void write_results_slide(FILE *file) {
     );
 }
 
+static void write_category_legend_slide(
+    FILE *file
+) {
+
+    fprintf(file,
+        "\\begin{frame}{Lexical Category Legend}\n"
+        "\n"
+        "\\centering\n"
+        "\n"
+        "\\begin{tabular}{ll}\n"
+        "\\textbf{Category} & "
+        "\\textbf{Representation} \\\\ \\hline\n"
+        "\n"
+
+        "Keyword & "
+        "\\textcolor{keywordcolor}{\\textbf{keyword}} \\\\\n"
+
+        "Identifier & "
+        "\\textcolor{identifiercolor}{identifier} \\\\\n"
+
+        "Constant & "
+        "\\textcolor{constantcolor}{\\textbf{constant}} \\\\\n"
+
+        "String literal & "
+        "\\textcolor{stringcolor}{\\textit{string}} \\\\\n"
+
+        "Operator & "
+        "\\textcolor{operatorcolor}{\\textbf{operator}} \\\\\n"
+
+        "Punctuator & "
+        "\\textcolor{punctuatorcolor}{punctuator} \\\\\n"
+
+        "Lexical error & "
+        "\\colorbox{red!20}{"
+        "\\textcolor{errorcolor}{\\textbf{error}}} \\\\\n"
+
+        "\\end{tabular}\n"
+        "\n"
+        "\\end{frame}\n"
+        "\n"
+    );
+}
+
 /*
  * Writes a summary table containing the lexical categories
  * found by the scanner.
@@ -1142,6 +1355,8 @@ int beamer_generate(
     write_pdf_generation_slide(file);
 
     write_results_slide(file);
+
+    write_category_legend_slide(file);
     /*
     * Later:
     *
