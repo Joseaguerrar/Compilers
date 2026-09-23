@@ -35,6 +35,11 @@ INT_HEX     0[xX]{HEX}+
 INT_OCT     0[0-7]+
 FLOAT       ({DIGIT}+\.{DIGIT}*|\.{DIGIT}+)([eE][+-]?{DIGIT}+)?[fFlL]?|{DIGIT}+[eE][+-]?{DIGIT}+[fFlL]?
 
+BAD_OCT     0[0-7]*[89][0-9]*
+BAD_HEX         0[xX]
+BAD_EXP_INT     {DIGIT}+[eE][+-]?
+BAD_EXP_FLOAT   ({DIGIT}+\.{DIGIT}*|\.{DIGIT}+)[eE][+-]?
+
 /* Valid C escape sequences */
 ESC_SIMPLE  \\['"?\\abfnrtv]
 ESC_OCTAL   \\{OCTAL}{1,3}
@@ -85,6 +90,14 @@ CHAR_CHAR   ([^\\'\n]|{ESCAPE})
 "volatile"  { return set_token(TOK_VOLATILE, CAT_KEYWORD); }
 "while"     { return set_token(TOK_WHILE, CAT_KEYWORD); }
 
+ /* malformed numeric literals */
+{BAD_OCT}                     { return set_token(TOK_ERROR, CAT_ERROR);}
+
+{BAD_HEX}                     { return set_token(TOK_ERROR, CAT_ERROR);}
+
+{BAD_EXP_FLOAT}               { return set_token(TOK_ERROR, CAT_ERROR);}
+
+{BAD_EXP_INT}                 { return set_token(TOK_ERROR, CAT_ERROR);}
 {INT_DEC}|{INT_HEX}|{INT_OCT} { return set_token(TOK_INT_CONST, CAT_CONSTANT); }
 {FLOAT}                       { return set_token(TOK_FLOAT_CONST, CAT_CONSTANT); }
 
