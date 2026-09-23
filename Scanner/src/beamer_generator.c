@@ -154,10 +154,12 @@ static void write_preamble(FILE *file) {
         "\n"
         "\\usetheme{Madrid}\n"
         "\\usecolortheme{default}\n"
+        "\\usefonttheme{serif}\n"
         "\n"
+        "\\usepackage{lmodern}\n"
         "\\usepackage[utf8]{inputenc}\n"
         "\\usepackage[T1]{fontenc}\n"
-        "\\usepackage[spanish]{babel}\n"
+        "\\usepackage[english]{babel}\n"
         "\\usepackage{listings}\n"
         "\\usepackage{xcolor}\n"
         "\\usepackage{tikz}\n"
@@ -189,12 +191,6 @@ static void write_preamble(FILE *file) {
         "    tabsize=4\n"
         "}\n"
         "\n"
-        "\\title{Proyecto 1: Analizador Léxico}\n"
-        "\\subtitle{Scanner para el lenguaje C}\n"
-        "\\author{Integrante 1 \\\\ Integrante 2}\n"
-        "\\institute{Escuela de Ciencias de la Computación e Informática}\n"
-        "\\date{II Semestre 2026}\n"
-        "\n"
     );
 }
 
@@ -204,9 +200,43 @@ static void write_preamble(FILE *file) {
  */
 static void write_title_slide(FILE *file) {
 
-    fprintf(file,
-        "\\begin{frame}\n"
-        "    \\titlepage\n"
+     fprintf(file,
+        "\\begin{frame}{Project 1}\n"
+        "\n"
+        "\\centering\n"
+        "\n"
+        "{\\Large\\textsc{University of Costa Rica}}\\\\[0.15cm]\n"
+        "{\\large School of Computer Science and Informatics}\\\\[0.10cm]\n"
+        "{\\normalsize CI-0146 Compilers}\\\\[0.35cm]\n"
+        "\n"
+        "\\rule{0.78\\textwidth}{0.5pt}\\\\[0.22cm]\n"
+        "\n"
+        "{\\Large\\bfseries Lexical Analyzer}\\\\[0.14cm]\n"
+        "{\\normalsize Scanner for the C Programming Language}\\\\[0.22cm]\n"
+        "\n"
+        "\\rule{0.78\\textwidth}{0.5pt}\\\\[0.38cm]\n"
+        "\n"
+        "\\begin{columns}[T,onlytextwidth]\n"
+        "\n"
+        "\\begin{column}{0.46\\textwidth}\n"
+        "\\raggedright\n"
+        "{\\large\\textbf{Professor:}}\\\\[0.08cm]\n"
+        "{\\normalsize Dr. Francisco J. Torres-Rojas}\n"
+        "\\end{column}\n"
+        "\n"
+        "\\begin{column}{0.50\\textwidth}\n"
+        "\\raggedleft\n"
+        "{\\large\\textbf{Students:}}\\\\[0.08cm]\n"
+        "{\\normalsize José Guerra --- C33510}\\\\\n"
+        "{\\normalsize Mario Cordero --- C22306}\\\\\n"
+        "{\\normalsize Daniel Gómez --- C23310}\n"
+        "\\end{column}\n"
+        "\n"
+        "\\end{columns}\n"
+        "\n"
+        "\\vfill\n"
+        "{\\small II Semester 2026}\n"
+        "\n"
         "\\end{frame}\n"
         "\n"
     );
@@ -219,7 +249,7 @@ static void write_title_slide(FILE *file) {
 static void write_process_slide(FILE *file) {
 
     fprintf(file,
-        "\\begin{frame}{Proceso general}\n"
+        "\\begin{frame}{General Process}\n"
         "\n"
         "\\centering\n"
         "\n"
@@ -234,15 +264,15 @@ static void write_process_slide(FILE *file) {
         "    }\n"
         "]\n"
         "\n"
-        "\\node[box] (source) {Archivo fuente C};\n"
+        "\\node[box] (source) {C source file};\n"
         "\\node[box, below of=source] "
-        "(preprocessor) {Preprocesador};\n"
+        "(preprocessor) {Preprocessor};\n"
         "\\node[box, below of=preprocessor] "
-        "(temporary) {Archivo temporal};\n"
+        "(temporary) {Temporary file};\n"
         "\\node[box, below of=temporary] "
-        "(scanner) {Scanner léxico};\n"
+        "(scanner) {Lexical scanner};\n"
         "\\node[box, below of=scanner] "
-        "(tokens) {Tokens y estadísticas};\n"
+        "(tokens) {Tokens and statistics};\n"
         "\n"
         "\\draw[->, thick] (source) -- (preprocessor);\n"
         "\\draw[->, thick] (preprocessor) -- (temporary);\n"
@@ -263,35 +293,35 @@ static void write_process_slide(FILE *file) {
 static void write_flex_slide(FILE *file) {
 
     fprintf(file,
-        "\\begin{frame}{Uso de Flex}\n"
+        "\\begin{frame}{Using Flex}\n"
         "\n"
         "\\begin{itemize}\n"
-        "    \\item Flex permite definir patrones mediante "
-        "expresiones regulares.\n"
+        "    \\item Flex allows patterns to be defined using "
+        "regular expressions.\n"
         "\n"
-        "    \\item Cada patrón está asociado a una acción "
-        "escrita en C.\n"
+        "    \\item Each pattern is associated with an action "
+        "written in C.\n"
         "\n"
-        "    \\item A partir de un archivo \\texttt{.l}, "
-        "Flex genera código fuente en C.\n"
+        "    \\item From a \\texttt{.l} file, Flex generates "
+        "C source code.\n"
         "\n"
-        "    \\item El scanner procesa la entrada y reconoce "
-        "los diferentes lexemas.\n"
+        "    \\item The scanner processes the input and recognizes "
+        "the different lexemes.\n"
         "\n"
-        "    \\item Cada lexema es clasificado dentro de "
-        "una categoría léxica.\n"
+        "    \\item Each lexeme is classified into "
+        "a lexical category.\n"
         "\\end{itemize}\n"
         "\n"
         "\\vspace{0.4cm}\n"
         "\n"
-        "\\begin{block}{Flujo básico}\n"
+        "\\begin{block}{Basic Flow}\n"
         "\\texttt{scanner.l}\n"
         "$\\rightarrow$\n"
         "\\texttt{Flex}\n"
         "$\\rightarrow$\n"
-        "\\texttt{scanner.yy.c}\n"
+        "\\texttt{scanner.lex.c}\n"
         "$\\rightarrow$\n"
-        "\\texttt{ejecutable}\n"
+        "\\texttt{executable}\n"
         "\\end{block}\n"
         "\n"
         "\\end{frame}\n"
@@ -311,9 +341,9 @@ static void write_input_slide(
 ) {
 
     fprintf(file,
-        "\\begin{frame}{Archivos procesados}\n"
+        "\\begin{frame}{Processed Files}\n"
         "\n"
-        "\\begin{block}{Archivo fuente}\n"
+        "\\begin{block}{Source file}\n"
         "\\texttt{"
     );
 
@@ -323,7 +353,7 @@ static void write_input_slide(
         "}\n"
         "\\end{block}\n"
         "\n"
-        "\\begin{block}{Archivo después del preproceso}\n"
+        "\\begin{block}{File after preprocessing}\n"
         "\\texttt{"
     );
 
@@ -333,8 +363,8 @@ static void write_input_slide(
         "}\n"
         "\\end{block}\n"
         "\n"
-        "El scanner utiliza el archivo temporal generado por "
-        "el preprocesador como su entrada real.\n"
+        "The scanner uses the temporary file generated by "
+        "the preprocessor as its actual input.\n"
         "\n"
         "\\end{frame}\n"
         "\n"
@@ -352,21 +382,21 @@ static void write_statistics_slide(
 ) {
 
     fprintf(file,
-        "\\begin{frame}{Resumen del análisis léxico}\n"
+        "\\begin{frame}{Lexical Analysis Summary}\n"
         "\n"
         "\\centering\n"
         "\n"
         "\\begin{tabular}{lr}\n"
-        "\\textbf{Categoría} & "
-        "\\textbf{Cantidad} \\\\ \\hline\n"
+        "\\textbf{Category} & "
+        "\\textbf{Count} \\\\ \\hline\n"
         "\n"
-        "Palabras reservadas & %zu \\\\\n"
-        "Identificadores & %zu \\\\\n"
-        "Constantes & %zu \\\\\n"
-        "Literales de hilera & %zu \\\\\n"
-        "Operadores & %zu \\\\\n"
-        "Signos de puntuación & %zu \\\\\n"
-        "Errores léxicos & %zu \\\\\n"
+        "Keywords & %zu \\\\\n"
+        "Identifiers & %zu \\\\\n"
+        "Constants & %zu \\\\\n"
+        "String literals & %zu \\\\\n"
+        "Operators & %zu \\\\\n"
+        "Punctuators & %zu \\\\\n"
+        "Lexical errors & %zu \\\\\n"
         "\\hline\n"
         "\\textbf{Total} & \\textbf{%zu} \\\\\n"
         "\\end{tabular}\n"
@@ -396,7 +426,7 @@ static void write_histogram(
 ) {
 
     fprintf(file,
-        "\\begin{frame}{Histograma de categorías léxicas}\n"
+        "\\begin{frame}{Histogram of Lexical Categories}\n"
         "\n"
         "\\centering\n"
         "\n"
@@ -406,7 +436,7 @@ static void write_histogram(
         "    ybar,\n"
         "    width=11.5cm,\n"
         "    height=6cm,\n"
-        "    ylabel={Cantidad},\n"
+        "    ylabel={Count},\n"
         "    symbolic x coords={"
         "Keyword,Identifier,Constant,String,"
         "Operator,Punctuator,Error},\n"
@@ -467,29 +497,29 @@ static void write_error_slide(
     }
 
     fprintf(file,
-        "\\begin{frame}{Errores léxicos}\n"
+        "\\begin{frame}{Lexical Errors}\n"
         "\n"
     );
 
     if (error_count == 0) {
 
         fprintf(file,
-            "\\begin{block}{Resultado}\n"
-            "No se encontraron errores léxicos.\n"
+            "\\begin{block}{Result}\n"
+            "No lexical errors were found.\n"
             "\\end{block}\n"
         );
 
     } else {
 
         fprintf(file,
-            "Se encontraron %zu errores léxicos.\n"
+            "%zu lexical errors were found.\n"
             "\n"
             "\\vspace{0.3cm}\n"
             "\n"
             "\\begin{tabular}{lll}\n"
-            "\\textbf{Lexema} & "
-            "\\textbf{Línea} & "
-            "\\textbf{Columna} \\\\ \\hline\n",
+            "\\textbf{Lexeme} & "
+            "\\textbf{Line} & "
+            "\\textbf{Column} \\\\ \\hline\n",
             error_count
         );
 
@@ -574,7 +604,7 @@ static void write_pie_chart(
 ) {
 
     fprintf(file,
-        "\\begin{frame}{Distribución de categorías léxicas}\n"
+        "\\begin{frame}{Distribution of Lexical Categories}\n"
         "\n"
     );
 
@@ -583,7 +613,7 @@ static void write_pie_chart(
         fprintf(file,
             "\\centering\n"
             "\n"
-            "No se encontraron tokens para representar.\n"
+            "No tokens were found to display.\n"
             "\n"
             "\\end{frame}\n"
             "\n"
@@ -710,21 +740,21 @@ static void write_pie_chart(
         "\n"
         "\\begin{tabular}{lll}\n"
         "\\textcolor{blue!65}{\\rule{0.25cm}{0.25cm}} "
-        "Palabras reservadas: %zu &\n"
+        "Keywords: %zu &\n"
         "\\textcolor{green!60}{\\rule{0.25cm}{0.25cm}} "
-        "Identificadores: %zu &\n"
+        "Identifiers: %zu &\n"
         "\\textcolor{orange!70}{\\rule{0.25cm}{0.25cm}} "
-        "Constantes: %zu \\\\[0.15cm]\n"
+        "Constants: %zu \\\\[0.15cm]\n"
         "\n"
         "\\textcolor{cyan!60}{\\rule{0.25cm}{0.25cm}} "
         "Strings: %zu &\n"
         "\\textcolor{violet!60}{\\rule{0.25cm}{0.25cm}} "
-        "Operadores: %zu &\n"
+        "Operators: %zu &\n"
         "\\textcolor{yellow!70}{\\rule{0.25cm}{0.25cm}} "
-        "Puntuación: %zu \\\\[0.15cm]\n"
+        "Punctuators: %zu \\\\[0.15cm]\n"
         "\n"
         "\\textcolor{red!65}{\\rule{0.25cm}{0.25cm}} "
-        "Errores: %zu & &\n"
+        "Errors: %zu & &\n"
         "\\end{tabular}\n"
         "\n"
         "\\end{frame}\n"
@@ -747,17 +777,17 @@ static void write_pie_chart(
 static void write_end_slide(FILE *file) {
 
     fprintf(file,
-        "\\begin{frame}\n"
+        "\\begin{frame}{End}\n"
         "\n"
         "\\centering\n"
         "\n"
-        "\\Huge\n"
-        "Fin\n"
+        "\\vfill\n"
         "\n"
-        "\\vspace{0.7cm}\n"
+        "{\\Huge\\bfseries Thank You}\\\\[0.45cm]\n"
+        "{\\Large Project 1 --- Lexical Analyzer}\\\\[0.20cm]\n"
+        "{\\large Scanner for the C Programming Language}\n"
         "\n"
-        "\\Large\n"
-        "Proyecto 1 --- Analizador Léxico\n"
+        "\\vfill\n"
         "\n"
         "\\end{frame}\n"
         "\n"
