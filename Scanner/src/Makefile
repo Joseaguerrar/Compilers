@@ -36,8 +36,10 @@ directories:
 $(BUILD_DIR)/preprocessor.lex.c: preprocessor.l | directories
 	$(FLEX) -o $@ $<
 
-$(BUILD_DIR)/preprocessor.o: $(BUILD_DIR)/preprocessor.lex.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(BUILD_DIR)/preprocessor.o: \
+	$(BUILD_DIR)/preprocessor.lex.c \
+	../include/preprocessor.h
+	$(CC) $(CFLAGS) -c $(BUILD_DIR)/preprocessor.lex.c -o $@
 
 
 # ============================================================
@@ -47,8 +49,10 @@ $(BUILD_DIR)/preprocessor.o: $(BUILD_DIR)/preprocessor.lex.c
 $(BUILD_DIR)/scanner.lex.c: scanner.l | directories
 	$(FLEX) -o $@ $<
 
-$(BUILD_DIR)/scanner.lex.o: $(BUILD_DIR)/scanner.lex.c
-	$(CC) $(CFLAGS) -c $< -o $@
+$(BUILD_DIR)/scanner.lex.o: \
+	$(BUILD_DIR)/scanner.lex.c \
+	../include/token.h
+	$(CC) $(CFLAGS) -c $(BUILD_DIR)/scanner.lex.c -o $@
 
 
 # ============================================================
@@ -94,17 +98,6 @@ $(TARGET): \
 	$(BUILD_DIR)/beamer_generator.o
 	$(CC) $(CFLAGS) $^ -o $@
 
-
-# ============================================================
-# Run complete pipeline
-# ============================================================
-
-run: all
-	@if [ -z "$(INPUT)" ]; then \
-		echo "Uso: make run INPUT=archivo.c"; \
-		exit 1; \
-	fi
-	cd .. && ./bin/analyzer $(INPUT)
 
 
 # ============================================================
