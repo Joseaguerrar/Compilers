@@ -25,6 +25,8 @@ static int set_token(TokenType type, TokenCategory cat) {
 
 DIGIT       [0-9]
 HEX         [0-9a-fA-F]
+OCTAL       [0-7]
+
 LETTER      [a-zA-Z_]
 IDENT       {LETTER}({LETTER}|{DIGIT})*
 
@@ -32,6 +34,18 @@ INT_DEC     [1-9]{DIGIT}*|0
 INT_HEX     0[xX]{HEX}+
 INT_OCT     0[0-7]+
 FLOAT       ({DIGIT}+\.{DIGIT}*|\.{DIGIT}+)([eE][+-]?{DIGIT}+)?[fFlL]?|{DIGIT}+[eE][+-]?{DIGIT}+[fFlL]?
+
+/* Valid C escape sequences */
+ESC_SIMPLE  \\['"?\\abfnrtv]
+ESC_OCTAL   \\{OCTAL}{1,3}
+ESC_HEX     \\x{HEX}+
+ESC_UCN     (\\u{HEX}{4}|\\U{HEX}{8})
+
+ESCAPE      ({ESC_SIMPLE}|{ESC_OCTAL}|{ESC_HEX}|{ESC_UCN})
+
+/* Valid characters inside literals */
+STRING_CHAR ([^\\\"\n]|{ESCAPE})
+CHAR_CHAR   ([^\\'\n]|{ESCAPE})
 
 %%
 
@@ -73,8 +87,55 @@ FLOAT       ({DIGIT}+\.{DIGIT}*|\.{DIGIT}+)([eE][+-]?{DIGIT}+)?[fFlL]?|{DIGIT}+[
 
 {INT_DEC}|{INT_HEX}|{INT_OCT} { return set_token(TOK_INT_CONST, CAT_CONSTANT); }
 {FLOAT}                       { return set_token(TOK_FLOAT_CONST, CAT_CONSTANT); }
-\'([^\\\'\n]|\\.)+\'          { return set_token(TOK_CHAR_CONST, CAT_CONSTANT); }
-\"([^\\\"\n]|\\.)*\"          { return set_token(TOK_STRING_LITERAL, CAT_STRING_LITERAL); }
+
+ /* Valid character constant */
+\'{CHAR_CHAR}+\' {
+    return set_token(
+        TOK_CHAR_CONST,
+        CAT_CONSTANT
+    );
+}
+
+ /* Invalid but closed character constant */
+\'([^\\'\n]|\\.)+\' {
+    return set_token(
+        TOK_ERROR,
+        CAT_ERROR
+    );
+}
+
+ /* Unterminated character constant */
+\'([^\\'\n]|\\.)* {
+    return set_token(
+        TOK_ERROR,
+        CAT_ERROR
+    );
+}
+
+
+ /* Valid string literal */
+\"{STRING_CHAR}*\" {
+    return set_token(
+        TOK_STRING_LITERAL,
+        CAT_STRING_LITERAL
+    );
+}
+
+ /* Invalid escape inside a closed string */
+\"([^\\\"\n]|\\.)*\" {
+    return set_token(
+        TOK_ERROR,
+        CAT_ERROR
+    );
+}
+
+ /* Unterminated string */
+\"([^\\\"\n]|\\.)* {
+    return set_token(
+        TOK_ERROR,
+        CAT_ERROR
+    );
+}
 
 {IDENT}     { return set_token(TOK_IDENTIFIER, CAT_IDENTIFIER); }
 
