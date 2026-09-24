@@ -5,6 +5,7 @@
     #include <ctype.h>
     #include <unistd.h>
     #include <stdbool.h>
+    #include <limits.h>
 
     #include "preprocessor.h"
 
@@ -45,6 +46,51 @@
 
     static FILE* include_files[MAX_DEPTH];
     static int include_depth = 0;
+    static char include_dirs[MAX_DEPTH + 1][PATH_MAX];
+
+    static void free_macro_table(void) {
+        for (int i = 0; i < macro_count; i++) {
+            free(macro_table[i].key);
+            free(macro_table[i].value);
+            for (int j = 0; j < macro_table[i].arg_count; j++) {
+                free(macro_table[i].args[j]);
+            }
+        }
+        macro_count = 0;
+    }
+
+    static void get_dirname(const char* filepath, char* dir, size_t dir_size) {
+        const char* last_slash = strrchr(filepath, '/');
+        if (last_slash != NULL) {
+            size_t len = (size_t)(last_slash - filepath);
+            if (len >= dir_size) len = dir_size - 1;
+            memcpy(dir, filepath, len);
+            dir[len] = '\0';
+        } else {
+            strcpy(dir, ".");
+        }
+    }
+
+    static size_t skip_comment(const char* text, size_t i) {
+        if (text[i] == '/' && text[i + 1] == '*') {
+            i += 2;
+            while (text[i] != '\0' && !(text[i] == '*' && text[i + 1] == '/')) {
+                i++;
+            }
+            if (text[i] == '*' && text[i + 1] == '/') {
+                i += 2;
+            }
+            return i;
+        }
+        if (text[i] == '/' && text[i + 1] == '/') {
+            i += 2;
+            while (text[i] != '\0' && text[i] != '\n') {
+                i++;
+            }
+            return i;
+        }
+        return i;
+    }
 
     static int expand_macro_value(const char* value, char* output,
                               size_t output_size, int depth,
@@ -403,12 +449,6 @@
 
         MacroType type = is_function ? M_FUNCTION : macro_type(value_buffer);
 
-        if (type == M_EMPTY) {
-            preprocessor_error_count++;
-            definitive_error = 0;
-            fprintf(stderr, "Error: directiva include incompleta para %s\n", key_buffer);
-        }
-
         int result = macro_insert(key_buffer, value_buffer, type, params, param_count);
 
         free(key_buffer);
@@ -494,6 +534,11 @@
 
         while (text[i] != '\0') {
             char c = text[i];
+
+            if (c == '/' && (text[i + 1] == '*' || text[i + 1] == '/')) {
+                i = skip_comment(text, i);
+                continue;
+            }
 
             if (c == '"' || c == '\'') {
                 i = skip_literal(text, i);
@@ -1043,7 +1088,22 @@ REST    ({CONT}|[^\n])*
     char filename[MAX_VALUE];
 
     if (include_get_filename(yytext, filename, sizeof(filename))) {
-        FILE* included_file = fopen(filename, "r");
+        char resolved_path[PATH_MAX + MAX_VALUE + 2];
+        FILE* included_file = NULL;
+
+        if (filename[0] != '/') {
+            const char* current_dir = include_dirs[include_depth];
+            snprintf(resolved_path, sizeof(resolved_path), "%s/%s", current_dir, filename);
+            included_file = fopen(resolved_path, "r");
+        }
+
+        if (included_file == NULL) {
+            included_file = fopen(filename, "r");
+            if (included_file != NULL) {
+                strncpy(resolved_path, filename, sizeof(resolved_path) - 1);
+                resolved_path[sizeof(resolved_path) - 1] = '\0';
+            }
+        }
 
         if (included_file == NULL) {
             fprintf(stderr, "Error: no se pudo abrir %s\n", filename);
@@ -1055,6 +1115,7 @@ REST    ({CONT}|[^\n])*
             definitive_error = 0;
             fclose(included_file);
         } else {
+            get_dirname(resolved_path, include_dirs[include_depth + 1], sizeof(include_dirs[include_depth + 1]));
             include_files[include_depth++] = included_file;
 
             yypush_buffer_state(
@@ -1191,18 +1252,54 @@ static void handle_function_call(const Macro* macro, const char* name) {
     memcpy(call, name, call_length);
     call[call_length] = '\0';
 
-    while ((c = input()) != EOF && c != 0 && isspace(c)) {
-        if (c == '\n') {
-            newlines++;
+    while (1) {
+        c = input();
+        if (c == EOF || c == 0) {
+            break;
         }
 
-        if (blank_length < sizeof(blanks) - 1) {
-            blanks[blank_length++] = (char)c;
+        if (isspace(c)) {
+            if (c == '\n') {
+                newlines++;
+            }
+            if (blank_length < sizeof(blanks) - 1) {
+                blanks[blank_length++] = (char)c;
+            }
+            continue;
         }
+
+        if (c == '/') {
+            int c2 = input();
+            if (c2 == '*') {
+                if (blank_length < sizeof(blanks) - 1) {
+                    blanks[blank_length++] = ' ';
+                }
+                int prev = 0;
+                while ((c = input()) != EOF && c != 0) {
+                    if (c == '\n') newlines++;
+                    if (prev == '*' && c == '/') break;
+                    prev = c;
+                }
+                continue;
+            } else if (c2 == '/') {
+                if (blank_length < sizeof(blanks) - 1) {
+                    blanks[blank_length++] = ' ';
+                }
+                while ((c = input()) != EOF && c != 0 && c != '\n') {
+                }
+                if (c == '\n') newlines++;
+                continue;
+            } else {
+                if (c2 != EOF && c2 != 0) {
+                    unput(c2);
+                }
+            }
+        }
+
+        break;
     }
 
     blanks[blank_length] = '\0';
-
 
     if (c != '(') {
         fprintf(yyout, "%s%s", call, blanks);
@@ -1222,6 +1319,34 @@ static void handle_function_call(const Macro* macro, const char* name) {
 
         if (c == EOF || c == 0) {
             break;
+        }
+
+        if (c == '/') {
+            int c2 = input();
+            if (c2 == '*') {
+                if (call_length < sizeof(call) - 1) {
+                    call[call_length++] = ' ';
+                }
+                int prev = 0;
+                while ((c = input()) != EOF && c != 0) {
+                    if (c == '\n') newlines++;
+                    if (prev == '*' && c == '/') break;
+                    prev = c;
+                }
+                continue;
+            } else if (c2 == '/') {
+                if (call_length < sizeof(call) - 1) {
+                    call[call_length++] = ' ';
+                }
+                while ((c = input()) != EOF && c != 0 && c != '\n') {
+                }
+                if (c == '\n') newlines++;
+                continue;
+            } else {
+                if (c2 != EOF && c2 != 0) {
+                    unput(c2);
+                }
+            }
         }
 
         if (c == '\n') {
@@ -1321,9 +1446,12 @@ int preprocess_file(
         return 0;
     }
 
+    free_macro_table();
+    definitive_error = 1;
     lexical_error_count = 0;
     preprocessor_error_count = 0;
     include_depth = 0;
+    get_dirname(input_filename, include_dirs[0], sizeof(include_dirs[0]));
 
     pp_in = input_file;
     pp_out = temp_file;

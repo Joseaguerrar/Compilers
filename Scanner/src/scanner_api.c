@@ -5,6 +5,7 @@
 
 extern FILE *sc_in;
 extern int sc_lex(void);
+extern void sc_restart(FILE *input_file);
 
 extern Token current_token;
 extern int line_num;
@@ -35,6 +36,7 @@ int init_scanner(const char *filename) {
     line_num = 1;
     col_num = 1;
 
+    sc_restart(scanner_file);
     sc_in = scanner_file;
 
     return 1;

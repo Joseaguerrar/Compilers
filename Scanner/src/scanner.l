@@ -151,8 +151,16 @@ PP_NUMBER   ({DIGIT}|\.{DIGIT})([A-Za-z_0-9.]|[eEpP][+-])*
     );
 }
 
+ /* Empty character constant */
+({CHAR_PREFIX})?\'\' {
+    return set_token(
+        TOK_ERROR,
+        CAT_ERROR
+    );
+}
+
  /* Invalid but closed character constant */
-\'([^\\'\n]|\\.)+\' {
+({CHAR_PREFIX})?\'([^\\'\n]|\\.)+\' {
     return set_token(
         TOK_ERROR,
         CAT_ERROR
@@ -160,7 +168,7 @@ PP_NUMBER   ({DIGIT}|\.{DIGIT})([A-Za-z_0-9.]|[eEpP][+-])*
 }
 
  /* Unterminated character constant */
-\'([^\\'\n]|\\.)* {
+({CHAR_PREFIX})?\'([^\\'\n]|\\.)* {
     return set_token(
         TOK_ERROR,
         CAT_ERROR

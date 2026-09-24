@@ -173,18 +173,46 @@ static void show_pdf(void) {
 }
 
 
+static void print_usage(const char *prog_name) {
+    printf("Uso: %s [opciones] <archivo_fuente>\n\n", prog_name);
+    printf("Opciones:\n");
+    printf("  -h, --help       Muestra esta ayuda y termina\n");
+    printf("  -v, --verbose    Muestra información detallada durante el proceso\n");
+    printf("  -n, --no-view    Genera el PDF sin abrir evince automáticamente\n");
+}
+
 int main(
     int argc,
     char *argv[]
 ) {
-    if (argc != 2) {
+    const char *source_filename = NULL;
+    int show_view = 1;
+    int verbose = 0;
 
-        fprintf(
-            stderr,
-            "Uso: %s <archivo_fuente>\n",
-            argv[0]
-        );
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            print_usage(argv[0]);
+            return EXIT_SUCCESS;
+        } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
+            verbose = 1;
+        } else if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--no-view") == 0) {
+            show_view = 0;
+        } else if (argv[i][0] == '-') {
+            fprintf(stderr, "Opción desconocida: %s\n", argv[i]);
+            print_usage(argv[0]);
+            return EXIT_FAILURE;
+        } else {
+            if (source_filename == NULL) {
+                source_filename = argv[i];
+            } else {
+                fprintf(stderr, "Error: solo se puede especificar un archivo fuente\n");
+                return EXIT_FAILURE;
+            }
+        }
+    }
 
+    if (source_filename == NULL) {
+        print_usage(argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -212,7 +240,7 @@ int main(
     int preprocessing_errors = 0;
 
     if (!preprocess_file(
-            argv[1],
+            source_filename,
             temp_filename,
             sizeof(temp_filename),
             &preprocessing_lexical_errors,
@@ -226,21 +254,11 @@ int main(
         return EXIT_FAILURE;
     }
 
-    /*printf(
-        "Archivo temporal generado: %s\n",
-        temp_filename
-    );
-
-    printf(
-        "Errores léxicos de preproceso: %d\n",
-        preprocessing_lexical_errors
-    );
-
-    printf(
-        "Errores de preprocesador: %d\n",
-        preprocessing_errors
-    );*/
-
+    if (verbose) {
+        printf("Archivo temporal generado: %s\n", temp_filename);
+        printf("Errores léxicos de preproceso: %d\n", preprocessing_lexical_errors);
+        printf("Errores de preprocesador: %d\n", preprocessing_errors);
+    }
 
     /*
      * --------------------------------------------------
@@ -264,11 +282,9 @@ int main(
         return EXIT_FAILURE;
     }
 
-    /*printf(
-        "Tokens encontrados: %zu\n",
-        token_count
-    );*/
-
+    if (verbose) {
+        printf("Tokens encontrados: %zu\n", token_count);
+    }
 
     /*
      * --------------------------------------------------
@@ -278,7 +294,7 @@ int main(
 
     if (!beamer_generate(
             TEX_FILENAME,
-            argv[1],
+            source_filename,
             temp_filename,
             tokens,
             token_count)) {
@@ -301,7 +317,6 @@ int main(
         token_count
     );
 
-
     /*
      * --------------------------------------------------
      * 4. PDF GENERATION
@@ -313,19 +328,19 @@ int main(
         return EXIT_FAILURE;
     }
 
-
     /*
      * --------------------------------------------------
      * 5. PDF VISUALIZATION
      * --------------------------------------------------
      */
 
-    show_pdf();
+    if (show_view) {
+        show_pdf();
+    }
 
-    /*printf(
-        "Presentación generada: %s\n",
-        PDF_FILENAME
-    );*/
+    if (verbose) {
+        printf("Presentación generada exitosamente: %s\n", PDF_FILENAME);
+    }
 
     return EXIT_SUCCESS;
 }

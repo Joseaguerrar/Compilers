@@ -147,7 +147,13 @@ static void write_latex_escaped(
                 break;
 
             default:
-                fputc(*text, file);
+                if ((unsigned char)*text < 32 && *text != '\t' && *text != '\n' && *text != '\r') {
+                    fprintf(file, "?");
+                } else if ((unsigned char)*text >= 128) {
+                    fprintf(file, "\\symbol{%u}", (unsigned char)*text);
+                } else {
+                    fputc(*text, file);
+                }
                 break;
         }
 
@@ -216,7 +222,13 @@ static void write_code_escaped(
                 break;
 
             default:
-                fputc(*p, file);
+                if ((unsigned char)*p < 32 && *p != '\t' && *p != '\n' && *p != '\r') {
+                    fprintf(file, "?");
+                } else if ((unsigned char)*p >= 128) {
+                    fprintf(file, "\\symbol{%u}", (unsigned char)*p);
+                } else {
+                    fputc(*p, file);
+                }
                 break;
         }
     }
@@ -614,7 +626,6 @@ static void write_preamble(FILE *file) {
         "\\usecolortheme{default}\n"
         "\\usefonttheme{serif}\n"
         "\n"
-        "\\usepackage{lmodern}\n"
         "\\usepackage[utf8]{inputenc}\n"
         "\\usepackage[T1]{fontenc}\n"
         "\\usepackage[english]{babel}\n"
