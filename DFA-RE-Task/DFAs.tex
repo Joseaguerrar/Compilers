@@ -1,0 +1,1297 @@
+\documentclass[12pt]{article}
+
+% =========================================================
+% PAQUETES
+% =========================================================
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{geometry}
+\geometry{
+    letterpaper,
+    left=2.5cm,
+    right=2.5cm,
+    top=2.5cm,
+    bottom=2.5cm
+}
+
+% =========================================================
+% TIKZ PARA DFA
+% =========================================================
+
+\usepackage{tikz}
+
+\usetikzlibrary{
+    automata,
+    positioning,
+    arrows.meta
+}
+
+\tikzset{
+    >=Stealth,
+    every state/.style={
+        minimum size=1cm,
+        inner sep=2pt
+    }
+}
+
+% Quitar numeración de páginas en portada
+\pagestyle{plain}
+
+% =========================================================
+% DOCUMENTO
+% =========================================================
+
+\begin{document}
+
+% =========================================================
+% PORTADA
+% =========================================================
+
+\begin{titlepage}
+
+    \centering
+
+    \vspace*{1.5cm}
+
+    {\Large\textsc{Universidad de Costa Rica}\par}
+
+    \vspace{0.7cm}
+
+    {\large\textsc{Escuela de Ciencias de la Computación e Informática}\par}
+
+    \vspace{0.8cm}
+
+    {\large\textbf{CI-0146 Compilers}\par}
+
+    % -----------------------------------------------------
+    % TÍTULO
+    % -----------------------------------------------------
+
+    \vspace{2.5cm}
+
+    \rule{0.88\textwidth}{0.6pt}
+
+    \vspace{0.5cm}
+
+    {\LARGE\textbf{Deterministic Finite Automata}\par}
+
+    \vspace{0.5cm}
+
+    \rule{0.88\textwidth}{0.6pt}
+
+    % -----------------------------------------------------
+    % PROFESOR Y ESTUDIANTES
+    % -----------------------------------------------------
+
+    \vspace{2.2cm}
+
+    \noindent
+    \begin{minipage}[t]{0.45\textwidth}
+        \raggedright
+
+        \textbf{Professor:}
+
+        \vspace{0.25cm}
+
+        Dr. Francisco J. Torres-Rojas
+
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.45\textwidth}
+        \raggedleft
+
+        \textbf{Students:}
+
+        \vspace{0.25cm}
+
+        José Guerra --- C33510\\
+        Mario Cordero --- C22306\\
+        Daniel Gómez --- C23310
+
+    \end{minipage}
+
+    % -----------------------------------------------------
+    % FECHA
+    % -----------------------------------------------------
+
+    \vfill
+
+    {\large
+        \textbf{Delivery date:} [DELIVERY DATE]
+    \par}
+
+    \vspace{1.5cm}
+
+\end{titlepage}
+
+% =========================================================
+% EJERCICIO 12
+% =========================================================
+
+\section*{Exercise 12}
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=3.3cm,
+    on grid,
+    auto,
+    >=Stealth
+]
+
+    % Estados
+    \node[state, initial, accepting] (q0) {$q_0$};
+    \node[state, accepting] (q1) [right=of q0] {$q_1$};
+    \node[state, accepting] (q2) [right=of q1] {$q_2$};
+    \node[state] (qd) [below=2.4cm of q1] {$q_d$};
+
+    % Transiciones
+    \path[->]
+        (q0) edge[loop above] node{$a$} ()
+             edge node[above]{$b$} (q1)
+             edge[bend left=60] node[pos=0.5, above=4pt]{$c$} (q2)
+
+        (q1) edge[loop above] node{$b$} ()
+             edge node[above]{$c$} (q2)
+             edge node[left]{$a$} (qd)
+
+        (q2) edge[loop above] node{$c$} ()
+             edge[bend left=10] node[right]{$a,b$} (qd)
+
+        (qd) edge[loop below] node{$a,b,c$} ();
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 13
+% =========================================================
+
+\section*{Exercise 13}
+
+\begin{center}
+\begin{tikzpicture}[
+    auto,
+    >=Stealth
+]
+
+    % Estados
+    \node[state, initial]   (qs) at (0,0)      {$q_s$};
+    \node[state, accepting] (q0) at (3,1.1)    {$q_0$};
+    \node[state, accepting] (q1) at (3,-1.7)   {$q_1$};
+    \node[state, accepting] (q2) at (6,0)      {$q_2$};
+    \node[state]            (qd) at (6,-3.2)   {$q_d$};
+
+    % Transiciones
+    \path[->]
+
+        % Desde el estado inicial
+        (qs)
+            edge node[above left] {$a$} (q0)
+            edge node[below left] {$b$} (q1)
+            edge[
+                out=95,
+                in=105,
+                looseness=1.55
+            ]
+            node[pos=0.5, above=6pt] {$c$} (q2)
+
+        % Desde q0
+        (q0)
+            edge[loop above] node {$a$} ()
+            edge node[left] {$b$} (q1)
+            edge[bend left=12] node[above right] {$c$} (q2)
+
+        % Desde q1
+        (q1)
+            edge[loop below] node {$b$} ()
+            edge node[below right] {$c$} (q2)
+            edge node[below left] {$a$} (qd)
+
+        % Desde q2
+        (q2)
+            edge[loop right] node {$c$} ()
+            edge node[right] {$a,b$} (qd)
+
+        % Estado muerto
+        (qd)
+            edge[loop below] node {$a,b,c$} ();
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 14
+% =========================================================
+
+\section*{Exercise 14}
+
+\begin{center}
+\begin{tikzpicture}[
+    auto,
+    >=Stealth
+]
+
+    % Estados
+    \node[state, initial]   (qs) at (0,0)       {$q_s$};
+
+    \node[state]            (q1) at (2.7,1.5)   {$q_1$};
+    \node[state]            (q2) at (2.7,-1.5)  {$q_2$};
+
+    \node[state, accepting] (q3) at (5.4,1.5)   {$q_3$};
+    \node[state, accepting] (q4) at (5.4,-1.5)  {$q_4$};
+
+    \node[state]            (qd) at (8,0)       {$q_d$};
+
+    % Transiciones
+    \path[->]
+
+        % Desde el estado inicial
+        (qs)
+            edge node[above left] {$a$} (q1)
+            edge node[below left] {$b$} (q2)
+
+        % Desde q1
+        (q1)
+            edge node[above] {$a$} (q3)
+            edge node[below left] {$b$} (q4)
+
+        % Desde q2
+        (q2)
+            edge node[above] {$b$} (q4)
+            edge[
+                out=-80,
+                in=-80,
+                looseness=1.50
+            ]
+            node[pos=0.50, below] {$a$} (qd)
+
+        % Estado de aceptación superior
+        (q3)
+            edge[loop above] node {$a$} ()
+            edge node[right] {$b$} (q4)
+
+        % Estado de aceptación inferior
+        (q4)
+            edge[loop below] node {$b$} ()
+            edge node[below right] {$a$} (qd)
+
+        % Estado muerto
+        (qd)
+            edge[loop right] node {$a,b$} ();
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 15
+% =========================================================
+
+\section*{Exercise 15}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 15
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 16
+% =========================================================
+
+\section*{Exercise 16}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 16
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 17
+% =========================================================
+
+\section*{Exercise 17}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 17
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 18
+% =========================================================
+
+\section*{Exercise 18}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 18
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 19
+% =========================================================
+
+\section*{Exercise 19}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 19
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 20
+% =========================================================
+
+\section*{Exercise 20}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 20
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 21
+% =========================================================
+
+\section*{Exercise 21}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 21
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 22
+% =========================================================
+
+\section*{Exercise 22}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 22
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 23
+% =========================================================
+
+\section*{Exercise 23}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 23
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 24
+% =========================================================
+
+\section*{Exercise 24}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 24
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 25
+% =========================================================
+
+\section*{Exercise 25}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 25
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 26
+% =========================================================
+
+\section*{Exercise 26}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 26
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 27
+% =========================================================
+
+\section*{Exercise 27}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 27
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 28
+% =========================================================
+
+\section*{Exercise 28}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 28
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 29
+% =========================================================
+
+\section*{Exercise 29}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 29
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 30
+% =========================================================
+
+\section*{Exercise 30}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 30
+\documentclass[12pt]{article}
+
+% =========================================================
+% PAQUETES GENERALES
+% =========================================================
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{geometry}
+\geometry{
+    letterpaper,
+    left=2.5cm,
+    right=2.5cm,
+    top=2.5cm,
+    bottom=2.5cm
+}
+
+\usepackage{setspace}
+
+% =========================================================
+% TIKZ PARA DFAs
+% =========================================================
+
+\usepackage{tikz}
+
+\usetikzlibrary{
+    automata,
+    positioning,
+    arrows.meta
+}
+
+\tikzset{
+    >=Stealth,
+    every state/.style={
+        minimum size=1cm
+    }
+}
+
+% =========================================================
+% DOCUMENTO
+% =========================================================
+
+\begin{document}
+
+% =========================================================
+% PORTADA
+% =========================================================
+
+\begin{titlepage}
+
+    \centering
+
+    % -----------------------------------------------------
+    % ENCABEZADO
+    % -----------------------------------------------------
+
+    \vspace*{1.5cm}
+
+    {\Large\textsc{Universidad de Costa Rica}\par}
+
+    \vspace{0.7cm}
+
+    {\large\textsc{Escuela de Ciencias de la Computación e Informática}\par}
+
+    \vspace{0.8cm}
+
+    {\large\textbf{CI-0146 Compilers}\par}
+
+    % -----------------------------------------------------
+    % TÍTULO
+    % -----------------------------------------------------
+
+    \vspace{2.5cm}
+
+    \rule{0.88\textwidth}{0.6pt}
+
+    \vspace{0.5cm}
+
+    {\LARGE\textbf{Regular Expressions and DFAs}\par}
+
+    \vspace{0.5cm}
+
+    \rule{0.88\textwidth}{0.6pt}
+
+    % -----------------------------------------------------
+    % PROFESOR Y ESTUDIANTE
+    % -----------------------------------------------------
+
+    \vspace{2.2cm}
+
+    \noindent
+    \begin{minipage}[t]{0.45\textwidth}
+
+        \raggedright
+
+        \textbf{Professor:}
+
+        \vspace{0.25cm}
+
+        Dr. Francisco J. Torres-Rojas
+
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.45\textwidth}
+
+        \raggedleft
+
+        \textbf{Student:}
+
+        \vspace{0.25cm}
+
+        José Guerra --- [CARNÉ]
+
+    \end{minipage}
+
+    % -----------------------------------------------------
+    % FECHA
+    % -----------------------------------------------------
+
+    \vfill
+
+    {\large
+    \textbf{Delivery date:} [DELIVERY DATE]
+    \par}
+
+    \vspace{1.5cm}
+
+\end{titlepage}
+
+% =========================================================
+% EJERCICIO 12
+% =========================================================
+
+\section*{Exercise 12}
+
+\begin{center}
+
+\begin{tikzpicture}[
+    node distance=3cm,
+    on grid,
+    auto
+]
+
+    % DFA Exercise 12
+
+\end{tikzpicture}
+
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 13
+% =========================================================
+
+\section*{Exercise 13}
+
+\begin{center}
+
+\begin{tikzpicture}[
+    node distance=3cm,
+    on grid,
+    auto
+]
+
+    % DFA Exercise 13
+
+\end{tikzpicture}
+
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 14
+% =========================================================
+
+\section*{Exercise 14}
+
+\begin{center}
+
+\begin{tikzpicture}[
+    node distance=3cm,
+    on grid,
+    auto
+]
+
+    % DFA Exercise 14
+
+\end{tikzpicture}
+
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 15
+% =========================================================
+
+\section*{Exercise 15}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 15
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 16
+% =========================================================
+
+\section*{Exercise 16}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 16
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 17
+% =========================================================
+
+\section*{Exercise 17}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 17
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 18
+% =========================================================
+
+\section*{Exercise 18}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 18
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 19
+% =========================================================
+
+\section*{Exercise 19}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 19
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 20
+% =========================================================
+
+\section*{Exercise 20}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 20
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 21
+% =========================================================
+
+\section*{Exercise 21}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 21
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 22
+% =========================================================
+
+\section*{Exercise 22}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 22
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 23
+% =========================================================
+
+\section*{Exercise 23}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 23
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 24
+% =========================================================
+
+\section*{Exercise 24}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 24
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 25
+% =========================================================
+
+\section*{Exercise 25}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 25
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 26
+% =========================================================
+
+\section*{Exercise 26}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 26
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 27
+% =========================================================
+
+\section*{Exercise 27}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 27
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 28
+% =========================================================
+
+\section*{Exercise 28}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 28
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 29
+% =========================================================
+
+\section*{Exercise 29}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 29
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 30
+% =========================================================
+
+\section*{Exercise 30}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 30
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 31
+% =========================================================
+
+\section*{Exercise 31}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 31
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 32
+% =========================================================
+
+\section*{Exercise 32}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 32
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 33
+% =========================================================
+
+\section*{Exercise 33}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 33
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 34
+% =========================================================
+
+\section*{Exercise 34}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 34
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 35
+% =========================================================
+
+\section*{Exercise 35}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 35
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 36
+% =========================================================
+
+\section*{Exercise 36}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 36
+
+\end{tikzpicture}
+\end{center}
+
+\[
+\boxed{\text{Regular Expression}}
+\]
+
+\end{document}
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 31
+% =========================================================
+
+\section*{Exercise 31}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 31
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 32
+% =========================================================
+
+\section*{Exercise 32}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 32
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 33
+% =========================================================
+
+\section*{Exercise 33}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 33
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 34
+% =========================================================
+
+\section*{Exercise 34}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 34
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 35
+% =========================================================
+
+\section*{Exercise 35}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 35
+
+\end{tikzpicture}
+\end{center}
+
+\vspace{1cm}
+
+% =========================================================
+% EJERCICIO 36
+% =========================================================
+
+\section*{Exercise 36}
+
+\begin{center}
+\begin{tikzpicture}[node distance=3cm, on grid, auto]
+
+    % DFA Exercise 36
+
+\end{tikzpicture}
+\end{center}
+
+\end{document}
