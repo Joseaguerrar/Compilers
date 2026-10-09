@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1791522261.77694 "/home/joseaguerrar/Documents/Compiladores/Compilers/DFA-RE-Task/DFAs.tex" "DFAs.pdf" "DFAs" 1791522262.17144 2
+["pdflatex"] 1791570995.5874 "/home/joseaguerrar/Documents/Compiladores/Compilers/DFA-RE-Task/DFAs.tex" "DFAs.pdf" "DFAs" 1791570996.7005 0
   "/etc/texmf/web2c/texmf.cnf" 1789582684.46107 475 c0e671620eb5563b2130f56340a5fde8 ""
   "/home/joseaguerrar/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1200.600pk" 1791520348.71015 31928 b1b74eb5f338175c15e0e73aa26daa88 ""
   "/home/joseaguerrar/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1440.600pk" 1791520349.24435 40112 bf7ed026d51dcf65bbbd21e7a33f8092 ""
@@ -9,7 +9,7 @@
   "/home/joseaguerrar/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/eccc1728.600pk" 1791520349.52715 45700 ce38cd0d1cb00a182f5dfb0462d9b025 ""
   "/home/joseaguerrar/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1200.600pk" 1791520348.43915 28416 de768afb59dfcad6cd9890b368460d87 ""
   "/home/joseaguerrar/.texlive2025/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1440.600pk" 1791520348.16832 34296 2f7ee03e05a2feb082b267b2c8993608 ""
-  "/home/joseaguerrar/Documents/Compiladores/Compilers/DFA-RE-Task/DFAs.tex" 1791522261.09076 24149 bb55d870e15fb13cb2480150798fb09f ""
+  "/home/joseaguerrar/Documents/Compiladores/Compilers/DFA-RE-Task/DFAs.tex" 1791570641.94814 33526 23cf47b5f206fd693f32b330655bc4b6 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx1200.tfm" 1136768653 3584 402da0b29eafbad07963b1224b222f18 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx1440.tfm" 1136768653 3584 13049b61b922a28b158a38aeff75ee9b ""
@@ -17,8 +17,6 @@
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecbx2074.tfm" 1136768653 3584 7666d038713b9e38abb5c2e0f6972188 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/eccc1440.tfm" 1136768653 3072 f2bcba5ec52607af3501d45108193ff5 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/eccc1728.tfm" 1136768653 3072 4c9b123826d0d85d40f16e82db0803b7 ""
-  "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecrm0600.tfm" 1136768653 3584 291a5713401683441e0a8c8f4417b17b ""
-  "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecrm0800.tfm" 1136768653 3584 49064b465390a8e316a3c8417a050403 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecrm1200.tfm" 1136768653 3584 f80ddd985bd00e29e9a6047ebd9d4781 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecrm1440.tfm" 1136768653 3584 3169d30142b88a27d4ab0e3468e963a2 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecrm1728.tfm" 1136768653 3584 3c76ccb63eda935a68ba65ba9da29f1a ""
@@ -147,8 +145,8 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1769369718 41603 27f93b3067076450172040dcd57ca8b3 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1789582888 128227 ed67923a37f7748d267799454bc1f95b ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1789582905 2257926 cf58dc7a1755b33c044915d3c7f35fd2 ""
-  "DFAs.aux" 1791522262.11245 151 32686b70d2e4761d38d7a58d6ba06e28 "pdflatex"
-  "DFAs.tex" 1791522261.09076 24149 bb55d870e15fb13cb2480150798fb09f ""
+  "DFAs.aux" 1791570996.6639 151 d36b290139c3d3a71aed96067a14f776 "pdflatex"
+  "DFAs.tex" 1791570641.94814 33526 23cf47b5f206fd693f32b330655bc4b6 ""
   (generated)
   "DFAs.aux"
   "DFAs.log"
