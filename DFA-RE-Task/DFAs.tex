@@ -10,7 +10,8 @@
 
 \usepackage{amsmath}
 \usepackage{amssymb}
-
+\usepackage{graphicx}
+\usepackage{needspace}
 \usepackage{geometry}
 \geometry{
     letterpaper,
@@ -39,7 +40,20 @@
         inner sep=2pt
     }
 }
-
+% =========================================================
+% FORMATO DE EJERCICIOS Y FIGURAS
+% =========================================================
+\newcounter{dfafigure}
+\newcommand{\exercisedescription}[1]{%
+    \Needspace{5\baselineskip}%
+    \noindent\textbf{Description:} #1\par
+    \vspace{0.35cm}
+}
+\newcommand{\dfacaption}{%
+    \refstepcounter{dfafigure}%
+    \par\vspace{0.25cm}%
+    {\bfseries Figure \arabic{dfafigure}}\par
+}
 % Quitar numeración de páginas en portada
 \pagestyle{plain}
 
@@ -74,17 +88,11 @@
     % -----------------------------------------------------
 
     \vspace{2.5cm}
-
-    \rule{0.88\textwidth}{0.6pt}
-
-    \vspace{0.5cm}
-
-    {\LARGE\textbf{Deterministic Finite Automata}\par}
-
-    \vspace{0.5cm}
-
-    \rule{0.88\textwidth}{0.6pt}
-
+    \rule{0.99\textwidth}{0.6pt}
+    \vspace{0.1cm}
+    {\LARGE\textbf{Deterministic Finite Automata(DFA)-Exercises}\par}
+    \vspace{0.1cm}
+    \rule{0.99\textwidth}{0.6pt}
     % -----------------------------------------------------
     % PROFESOR Y ESTUDIANTES
     % -----------------------------------------------------
@@ -135,7 +143,10 @@
 % =========================================================
 
 \section*{Exercise 12}
-
+\exercisedescription{%
+    \textit{The set of strings over {a,b,c} in which all the a’s precede the b’s, which in turn precede the c’s.
+    It is possible that there are no a’s, b’s, or c’s.}
+}
 \begin{center}
 \begin{tikzpicture}[
     node distance=3.3cm,
@@ -166,16 +177,18 @@
         (qd) edge[loop below] node{$a,b,c$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 13
 % =========================================================
 
 \section*{Exercise 13}
-
+\exercisedescription{%
+    \textit{The same set as Exercise 12 without the null string.}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -225,16 +238,19 @@
             edge[loop below] node {$a,b,c$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 14
 % =========================================================
 
 \section*{Exercise 14}
-
+\exercisedescription{%
+    \textit{The set of strings of length two or more over {a,b}
+    in which all the a’s precede the b’s.}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -290,16 +306,18 @@
             edge[loop right] node {$a,b$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 15
 % =========================================================
 
 \section*{Exercise 15}
-
+\exercisedescription{%
+    \textit{The set of strings over {a,b} that contain the substring aa and the substring bb.}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -338,7 +356,7 @@
 
         (q1)
             edge[loop above] node {$a$} ()
-            edge node[above] {$b$} (q2)
+            edge[bend left=25] node[above] {$b$} (q2)
 
         (q2)
             edge[bend left=25]
@@ -353,7 +371,7 @@
 
         (q4)
             edge[loop below] node {$b$} ()
-            edge node[below] {$a$} (q5)
+            edge[bend right=25] node[below] {$a$} (q5)
 
         (q5)
             edge[bend right=25]
@@ -365,16 +383,18 @@
             edge[loop right] node {$a,b$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 16
 % =========================================================
 
 \section*{Exercise 16}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -394,13 +414,15 @@
         % qs
         (qs)
             edge[loop below] node {$b$} ()
-            edge node[below] {$a$} (q0)
+            edge[
+                bend right=20
+            ] node[below] {$a$} (q0)
 
         % q0
         (q0)
             edge node[above] {$a$} (q1)
             edge[
-                bend right=32
+                bend right=20
             ]
             node[above] {$b$} (qs)
 
@@ -425,16 +447,18 @@
             edge[loop right] node {$a,b$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 17
 % =========================================================
 
 \section*{Exercise 17}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -465,16 +489,18 @@
             edge[loop above] node {$a,b,c$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 18
 % =========================================================
 
 \section*{Exercise 18}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -509,11 +535,7 @@
         % Desde q1
         (q1)
             edge node[below] {$a$} (qd)
-            edge[
-                out=115,
-                in=-35
-            ]
-            node[pos=0.45, above right] {$b$} (qf)
+            edge node[pos=0.45, above right] {$b$} (qf)
 
         % Estado final seguro
         (qf)
@@ -524,16 +546,18 @@
             edge[loop right] node {$a,b$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 19
 % =========================================================
 
 \section*{Exercise 19}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -557,16 +581,16 @@
         % q0
         (q0)
             edge node[above] {$a$} (q1)
-            edge[bend left=30]
+            edge[bend left=40]
                 node[below] {$b$} (qs)
 
         % q1
         (q1)
             edge node[above] {$a$} (qd)
             edge[
-                out=145,
-                in=35,
-                looseness=1.15
+                out=140,
+                in=40,
+                looseness=1.05
             ]
             node[pos=0.5, above=7pt] {$b$} (qs)
 
@@ -575,16 +599,18 @@
             edge[loop above] node {$a,b$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 20
 % =========================================================
 
 \section*{Exercise 20}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -625,73 +651,66 @@
             edge[loop above] node {$a,b$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 21
 % =========================================================
 
 \section*{Exercise 21}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
     >=Stealth
 ]
-
     % Estados
     \node[state, initial]   (qs) at (0,0)      {$q_s$};
     \node[state]            (q0) at (3,0)      {$q_0$};
-
     \node[state, accepting] (q1) at (6,0)      {$q_1$};
     \node[state, accepting] (q2) at (6,-2.6)   {$q_2$};
-
     \node[state]            (qd) at (9,0)      {$q_d$};
-
     % Transiciones
     \path[->]
-
         % qs: todavía no aparece aa
         (qs)
             edge[loop above] node {$b$} ()
             edge node[above] {$a$} (q0)
-
         % q0: se acaba de leer una a
         (q0)
             edge[bend left=28]
                 node[below] {$b$} (qs)
             edge node[above] {$a$} (q1)
-
         % q1: ya apareció aa exactamente una vez
         % y el último símbolo es a
         (q1)
             edge node[above] {$a$} (qd)
             edge node[right] {$b$} (q2)
-
         % q2: ya apareció aa una vez
         % y el último símbolo es b
         (q2)
             edge[loop below] node {$b$} ()
             edge[bend left=30]
                 node[left] {$a$} (q1)
-
         % Estado muerto
         (qd)
             edge[loop right] node {$a,b$} ();
-
 \end{tikzpicture}
+\dfacaption
 \end{center}
-
 \vspace{1cm}
-
 % =========================================================
 % EJERCICIO 22
 % =========================================================
 
 \section*{Exercise 22}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -760,16 +779,18 @@
             edge[loop below] node {$a,b,c$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 23
 % =========================================================
 
 \section*{Exercise 23}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -821,32 +842,239 @@
             edge[loop right] node {$a,b$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 24
 % =========================================================
+% =========================================================
+% EJERCICIO 24
+% =========================================================
+% =========================================================
+% EJERCICIO 24
+% =========================================================
+\clearpage
 
 \section*{Exercise 24}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
-\begin{tikzpicture}[node distance=3cm, on grid, auto]
-
-    % DFA Exercise 24
-
-\end{tikzpicture}
+\resizebox{!}{0.78\textheight}{%
+\begin{tikzpicture}[
+    auto,
+    >=Stealth,
+    semithick,
+    every node/.style={font=\normalsize},
+    scale=0.62,
+    transform shape
+]
+    % =====================================================
+    % ESTADOS
+    % =====================================================
+    % Inicial
+    \node[state, initial] (qs) at (0,-3) {$q_s$};
+    % -----------------------------------------------------
+    % NINGUNO ENCONTRADO
+    % q0: último a
+    % q1: último b
+    % q2: último c
+    % -----------------------------------------------------
+    \node[state] (q0) at (-3,-6) {$q_0$};
+    \node[state] (q1) at (0,-8.9) {$q_1$};
+    \node[state] (q2) at (3,-6) {$q_2$};
+    % -----------------------------------------------------
+    % SOLO aa
+    % q3: último a
+    % q4: último b
+    % q5: último c
+    % -----------------------------------------------------
+    \node[state] (q3) at (-7,-11.2)      {$q_3$};
+    \node[state] (q4) at (-8.9,-13.7)   {$q_4$};
+    \node[state] (q5) at (-5.1,-13.7)   {$q_5$};
+    % -----------------------------------------------------
+    % SOLO bb
+    % q7 arriba, q6 abajo izq, q8 abajo der
+    % -----------------------------------------------------
+    \node[state] (q7) at (0,-11.2)       {$q_7$};
+    \node[state] (q6) at (-1.8,-13.7)   {$q_6$};
+    \node[state] (q8) at (1.8,-13.7)    {$q_8$};
+    % -----------------------------------------------------
+    % SOLO cc
+    % q11 arriba, q9 abajo izq, q10 abajo der
+    % -----------------------------------------------------
+    \node[state] (q11) at (7,-11.2)      {$q_{11}$};
+    \node[state] (q9) at (5.1,-13.7)    {$q_9$};
+    \node[state] (q10) at (8.9,-13.7)   {$q_{10}$};
+    % -----------------------------------------------------
+    % aa y bb
+    % q13 arriba izq, q12 arriba der, q14 abajo
+    % -----------------------------------------------------
+    \node[state] (q13) at (-8.95,-16.9) {$q_{13}$};
+    \node[state] (q12) at (-5.15,-16.9) {$q_{12}$};
+    \node[state] (q14) at (-7,-19.1)    {$q_{14}$};
+    % -----------------------------------------------------
+    % aa y cc
+    % q17 arriba izq, q15 arriba der, q16 abajo
+    % -----------------------------------------------------
+    \node[state] (q17) at (-1.85,-16.9) {$q_{17}$};
+    \node[state] (q15) at (1.85,-16.9)  {$q_{15}$};
+    \node[state] (q16) at (0,-19.1)     {$q_{16}$};
+    % -----------------------------------------------------
+    % bb y cc
+    % q20 izq arriba, q19 der arriba, q18 abajo
+    % -----------------------------------------------------
+    \node[state] (q20) at (5.15,-16.9)   {$q_{20}$};
+    \node[state] (q19) at (8.85,-16.9)   {$q_{19}$};
+    \node[state] (q18) at (7,-19.1)     {$q_{18}$};
+    % Final
+    \node[state, accepting] (qf) at (0,-25) {$q_f$};
+    % =====================================================
+    % TRANSICIONES DESDE q_s
+    % =====================================================
+    \path[->]
+        (qs)
+            edge node[above left] {$a$} (q0)
+            edge node[below right, pos=0.1] {$b$} (q1)
+            edge node[above right] {$c$} (q2);
+    % =====================================================
+    % NINGUNO ENCONTRADO
+    % =====================================================
+    \path[->]
+        (q0)
+            edge node[above left] {$a$} (q3)
+            edge[bend left=12] node[above right, pos=0.5] {$b$} (q1)
+            edge[bend left=18] node[above, pos=0.2] {$c$} (q2)
+        (q1)
+            edge[bend left=12] node[below left] {$a$} (q0)
+            edge node[right] {$b$} (q7)
+            edge[bend left=12] node[above left, pos=0.3] {$c$} (q2)
+        (q2)
+            edge[bend left=18] node[above, pos=0.2] {$a$} (q0)
+            edge[bend left=12] node[below right, pos=0.3] {$b$} (q1)
+            edge node[above right] {$c$} (q11);
+    % =====================================================
+    % SOLO aa
+    % =====================================================
+    \path[->]
+        (q3)
+            edge[loop above] node {$a$} ()
+            edge[bend left=12] node[right] {$b$} (q4)
+            edge[bend left=12] node[right] {$c$} (q5)
+        (q4)
+            edge[bend left=12] node[left] {$a$} (q3)
+            edge node[left] {$b$} (q13)
+            edge[bend left=12] node[above] {$c$} (q5)
+        (q5)
+            edge[bend left=12] node[left] {$a$} (q3)
+            edge[bend left=12] node[below] {$b$} (q4)
+            edge node[right, pos = 0.1] {$c$} (q17);
+    % =====================================================
+    % SOLO bb
+    % q7 arriba, q6 abajo izq, q8 abajo der
+    % =====================================================
+    \path[->]
+        (q6)
+            edge node[left, pos = 0.1] {$a$} (q12)
+            edge[bend left=12] node[left] {$b$} (q7)
+            edge[bend left=12] node[above] {$c$} (q8)
+        (q7)
+            edge[bend left=12] node[right] {$a$} (q6)
+            edge[loop right] node {$b$} ()
+            edge[bend left=12] node[right] {$c$} (q8)
+        (q8)
+            edge[bend left=12] node[below] {$a$} (q6)
+            edge[bend left=12] node[left] {$b$} (q7)
+            edge node[right, pos = 0.1] {$c$} (q20);
+    % =====================================================
+    % SOLO cc
+    % q11 arriba, q9 abajo izq, q10 abajo der
+    % =====================================================
+    \path[->]
+        (q9)
+            edge node[left, pos = 0.1] {$a$} (q15)
+            edge[bend left=12] node[above] {$b$} (q10)
+            edge[bend left=12] node[left] {$c$} (q11)
+        (q10)
+            edge[bend left=12] node[below] {$a$} (q9)
+            edge node[left, pos = 0.1] {$b$} (q19)
+            edge[bend left=12] node[left] {$c$} (q11)
+        (q11)
+            edge[bend left=12] node[right] {$a$} (q9)
+            edge[bend left=12] node[right] {$b$} (q10)
+            edge[loop above] node {$c$} ();
+    % =====================================================
+    % aa y bb
+    % q13 arriba izq, q12 arriba der, q14 abajo
+    % =====================================================
+    \path[->]
+        (q12)
+            edge[loop above] node {$a$} ()
+            edge[bend left=12] node[below] {$b$} (q13)
+            edge[bend left=12] node[right] {$c$} (q14)
+        (q13)
+            edge[bend left=12] node[above] {$a$} (q12)
+            edge[loop left] node {$b$} ()
+            edge[bend left=8] node[right] {$c$} (q14)
+        (q14)
+            edge[bend left=12] node[left] {$a$} (q12)
+            edge[bend left=12] node[left] {$b$} (q13)
+            edge node[above] {$c$} (qf);
+    % =====================================================
+    % aa y cc
+    % q17 arriba izq, q15 arriba der, q16 abajo
+    % =====================================================
+    \path[->]
+        (q15)
+            edge[loop above] node {$a$} ()
+            edge[bend left=12] node[right] {$b$} (q16)
+            edge[bend left=12] node[below] {$c$} (q17)
+        (q16)
+            edge[bend left=12] node[left] {$a$} (q15)
+            edge node[left] {$b$} (qf)
+            edge[bend left=12] node[left] {$c$} (q17)
+        (q17)
+            edge[bend left=12] node[above] {$a$} (q15)
+            edge[bend left=12] node[right] {$b$} (q16)
+            edge[loop above] node {$c$} ();
+    % =====================================================
+    % bb y cc
+    % q20 izq arriba, q19 der arriba, q18 abajo
+    % =====================================================
+    \path[->]
+        (q18)
+            edge node[above] {$a$} (qf)
+            edge[bend left=12] node[left] {$b$} (q19)
+            edge[bend left=12] node[left] {$c$} (q20)
+        (q19)
+            edge[bend left=12] node[right] {$a$} (q18)
+            edge[loop right] node {$b$} ()
+            edge[bend left=12] node[below] {$c$} (q20)
+        (q20)
+            edge[bend left=12] node[right] {$a$} (q18)
+            edge[bend left=12] node[above] {$b$} (q19)
+            edge[loop above] node {$c$} ();
+    % =====================================================
+    % FINAL
+    % =====================================================
+    \path[->]
+        (qf)
+            edge[loop below] node {$a,b,c$} ();
+\end{tikzpicture}%
+}
+\dfacaption
 \end{center}
-
 \vspace{1cm}
-
 % =========================================================
 % EJERCICIO 25
 % =========================================================
 
 \section*{Exercise 25}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -877,16 +1105,18 @@
             edge[loop above] node {$a,b,c$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 26
 % =========================================================
 
 \section*{Exercise 26}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -918,15 +1148,17 @@
             edge[loop above] node {$a,b,c$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 % =========================================================
 % EJERCICIO 27
 % =========================================================
 
 \section*{Exercise 27}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -955,16 +1187,18 @@
             edge[loop above] node {$a,b,c$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 28
 % =========================================================
 
 \section*{Exercise 28}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -997,15 +1231,17 @@
             edge[loop above] node {$a,b,c$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 % =========================================================
 % EJERCICIO 29
 % =========================================================
 
 \section*{Exercise 29}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -1036,16 +1272,18 @@
             edge[bend left=15] node[below left] {$a$} (qs);
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 30
 % =========================================================
 
 \section*{Exercise 30}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -1087,16 +1325,18 @@
             edge[loop above] node {$a,b,c$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 31
 % =========================================================
 
 \section*{Exercise 31}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -1133,16 +1373,18 @@
             edge[loop right] node {$a,b$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 32
 % =========================================================
 
 \section*{Exercise 32}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -1165,14 +1407,14 @@
 
         % q_s: longitud par, aún no aparece bb
         (qs)
-            edge node[above left] {$a$} (q0)
-            edge node[below left] {$b$} (q1)
+            edge[bend left=20] node[above left] {$a$} (q0)
+            edge[bend right=20] node[below left] {$b$} (q1)
 
         % q0: longitud impar, último símbolo no es b
         (q0)
             edge[bend left=20]
                 node[below right, pos=0.3] {$a$} (qs)
-            edge node[above] {$b$} (q2)
+            edge[bend left=25] node[above] {$b$} (q2)
 
         % q1: longitud impar, último símbolo es b
         (q1)
@@ -1188,24 +1430,26 @@
 
         % q3: ya apareció bb y la longitud es par
         (q3)
-            edge node[above left] {$a,b$} (qf)
+            edge[bend left=23] node[above left] {$a,b$} (qf)
 
         % qf: ya apareció bb y la longitud es impar
         (qf)
-            edge[bend left=28]
+            edge[bend left=23]
                 node[right] {$a,b$} (q3);
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 33
 % =========================================================
 
 \section*{Exercise 33}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -1228,18 +1472,18 @@
         % q_s: longitud par, 0 a's
         (qs)
             edge node[above left] {$a$} (q1)
-            edge node[above right] {$b,c$} (q0)
+            edge[bend left=18] node[above right] {$b,c$} (q0)
 
         % q_0: longitud impar, 0 a's
         (q0)
             edge[bend left=18]
                 node[below left] {$b,c$} (qs)
             edge node[below right] {$a$} (qf)
-
+    
         % q_1: longitud impar, exactamente una a
         (q1)
-            edge node[above right] {$b,c$} (qf)
-            edge[bend left=25]
+            edge[bend left=25] node[above right] {$b,c$} (qf)
+            edge[bend left=40]
                 node[above] {$a$} (qd)
 
         % q_f: longitud par, exactamente una a
@@ -1253,16 +1497,18 @@
             edge[loop right] node {$a,b,c$} ();
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 34
 % =========================================================
 
 \section*{Exercise 34}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -1283,8 +1529,7 @@
         % último símbolo distinto de a
         (qs)
             edge[loop above] node {$b,c$} ()
-            edge node[above] {$a$} (q0)
-
+            edge[bend left=18] node[above] {$a$} (q0)
         % Par de ocurrencias de ab,
         % último símbolo es a
         (q0)
@@ -1297,32 +1542,29 @@
         % último símbolo distinto de a
         (qf)
             edge[loop above] node {$b,c$} ()
-            edge node[below right] {$a$} (q1)
-
+            edge[bend left=18] node[below right] {$a$} (q1)
         % Impar de ocurrencias de ab,
         % último símbolo es a
         (q1)
             edge[loop below] node {$a$} ()
             edge[bend left=18]
                 node[above left] {$c$} (qf)
-            edge[
-                out=155,
-                in=-55,
-                looseness=1.05
-            ]
+            edge
             node[pos=0.5, below left] {$b$} (qs);
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 35
 % =========================================================
 
 \section*{Exercise 35}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -1330,74 +1572,63 @@
 ]
 
     % Estados
-    \node[state, initial]   (qs) at (0,0)       {$q_s$};
-
+    \node[state, initial]   (qs) at (-1,0)       {$q_s$};
     % 0 b's
-    \node[state]            (q0) at (2.7,1.7)   {$q_0$};
-
+    \node[state]            (q0) at (1.7,1.7)   {$q_0$};
     % 1 b
     \node[state]            (q1) at (2.7,-1.7)  {$q_1$};
     \node[state]            (q2) at (5.5,1.7)  {$q_2$};
-
     % 2 b's
     \node[state]            (q3) at (5.5,-1.7)   {$q_3$};
     \node[state, accepting] (qf) at (8.3,0)     {$q_f$};
-
     % Más de 2 b's
     \node[state]            (qd) at (11,0)      {$q_d$};
-
     % Transiciones
     \path[->]
-
         % q_s: 0 b, longitud par
         (qs)
-            edge node[above left] {$a$} (q0)
+            edge[bend left=20] node[above left] {$a$} (q0)
             edge node[below left] {$b$} (q1)
-
         % q_0: 0 b, longitud impar
         (q0)
             edge[bend left=20]
                 node[below] {$a$} (qs)
-            edge node[right] {$b$} (q1)
-
+            edge node[left] {$b$} (q1)
         % q_1: 1 b, longitud impar
         (q1)
-            edge node[above left] {$a$} (q2)
+            edge[bend left=17] node[above left] {$a$} (q2)
             edge node[below] {$b$} (q3)
-
         % q_2: 1 b, longitud par
         (q2)
-            edge[bend left=20]
+            edge[bend left=17]
                 node[right] {$a$} (q1)
             edge node[above] {$b$} (qf)
-
         % q_3: 2 b, longitud par
         (q3)
-            edge node[above left] {$a$} (qf)
-            edge[bend right=25]
+            edge[bend left=20] node[above left] {$a$} (qf)
+            edge[bend right=35]
                 node[below] {$b$} (qd)
-
         % q_f: 2 b, longitud impar
         (qf)
             edge[bend left=20]
                 node[below right] {$a$} (q3)
             edge node[above] {$b$} (qd)
-
         % q_d: más de 2 b's
         (qd)
             edge[loop right] node {$a,b$} ();
-
 \end{tikzpicture}
+\dfacaption
 \end{center}
 
-\vspace{1cm}
 
 % =========================================================
 % EJERCICIO 36
 % =========================================================
 
 \section*{Exercise 36}
-
+\exercisedescription{%
+    \textit{[Insert exercise description here.]}
+}
 \begin{center}
 \begin{tikzpicture}[
     auto,
@@ -1457,6 +1688,7 @@
                 node[left] {$b$} (q0);
 
 \end{tikzpicture}
+\dfacaption
 \end{center}
 \vspace{1cm}
 
