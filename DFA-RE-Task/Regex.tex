@@ -1,0 +1,521 @@
+\documentclass[12pt]{article}
+
+% =========================================================
+% PAQUETES
+% =========================================================
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{needspace}
+\usepackage{geometry}
+\geometry{
+    letterpaper,
+    left=2.5cm,
+    right=2.5cm,
+    top=2.5cm,
+    bottom=2.5cm
+}
+
+% =========================================================
+% FORMATO DE EJERCICIOS Y REGEX
+% =========================================================
+\newcommand{\exercisedescription}[1]{%
+    \Needspace{4\baselineskip}%
+    \noindent\textbf{Description:} #1\par
+    \vspace{0.25cm}
+}
+
+\newcommand{\reexpression}[1]{%
+    \noindent\textbf{Regular Expression:}
+    \vspace{-0.25cm}
+    \begin{equation*}
+        #1
+    \end{equation*}
+    \vspace{-0.15cm}
+}
+
+\newcommand{\reexplanation}[1]{%
+    \noindent\textit{Explanation:} #1\par
+    \vspace{0.55cm}
+}
+
+\pagestyle{plain}
+
+% =========================================================
+% DOCUMENTO
+% =========================================================
+
+\begin{document}
+
+% =========================================================
+% PORTADA
+% =========================================================
+
+\begin{titlepage}
+
+    \centering
+
+    \vspace*{1.5cm}
+
+    {\Large\textsc{Universidad de Costa Rica}\par}
+
+    \vspace{0.7cm}
+
+    {\large\textsc{Escuela de Ciencias de la Computación e Informática}\par}
+
+    \vspace{0.8cm}
+
+    {\large\textbf{CI-0146 Compilers}\par}
+
+    % -----------------------------------------------------
+    % TÍTULO
+    % -----------------------------------------------------
+
+    \vspace{2.5cm}
+    \rule{0.99\textwidth}{0.6pt}
+    \vspace{0.1cm}
+    {\LARGE\textbf{Regular Expressions (RE) - Exercises}\par}
+    \vspace{0.1cm}
+    \rule{0.99\textwidth}{0.6pt}
+
+    % -----------------------------------------------------
+    % PROFESOR Y ESTUDIANTES
+    % -----------------------------------------------------
+
+    \vspace{2.2cm}
+
+    \noindent
+    \begin{minipage}[t]{0.45\textwidth}
+        \raggedright
+
+        \textbf{Professor:}
+
+        \vspace{0.25cm}
+
+        Dr. Francisco J. Torres-Rojas
+
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.45\textwidth}
+        \raggedleft
+
+        \textbf{Students:}
+
+        \vspace{0.25cm}
+
+        José Guerra --- C33510\\
+        Mario Cordero --- C22306\\
+        Daniel Gómez --- C23310
+
+    \end{minipage}
+
+    % -----------------------------------------------------
+    % FECHA
+    % -----------------------------------------------------
+
+    \vfill
+
+    {\large
+        \textbf{Delivery date:} October 19th, 2026
+    \par}
+
+    \vspace{1.5cm}
+
+\end{titlepage}
+
+% =========================================================
+% EJERCICIO 12
+% =========================================================
+
+\section*{Exercise 12}
+\exercisedescription{%
+    The set of strings over $\{a,b,c\}$ in which all the $a$'s precede the $b$'s, which in turn precede the $c$'s. It is possible that there are no $a$'s, $b$'s, or $c$'s.
+}
+\reexpression{%
+    a^* b^* c^*
+}
+\reexplanation{%
+    Generates any sequence of $a$'s followed by any sequence of $b$'s, followed by any sequence of $c$'s. It permits the empty string $\varepsilon$ and cases where any symbol is absent (e.g., $ac$, since $b^0 = \varepsilon$).
+}
+
+% =========================================================
+% EJERCICIO 13
+% =========================================================
+
+\section*{Exercise 13}
+\exercisedescription{%
+    The same set as Exercise 12 without the null string.
+}
+\reexpression{%
+    a a^* b^* c^* \mid b b^* c^* \mid c c^*
+}
+\reexplanation{%
+    Equivalent to $a^+ b^* c^* \mid b^+ c^* \mid c^+$. It generates every non-empty string in $a^* b^* c^*$ by partitioning according to the first occurring character.
+}
+
+% =========================================================
+% EJERCICIO 14
+% =========================================================
+
+\section*{Exercise 14}
+\exercisedescription{%
+    The set of strings of length two or more over $\{a,b\}$ in which all the $a$'s precede the $b$'s.
+}
+\reexpression{%
+    a a a^* b^* \mid a b b^* \mid b b b^*
+}
+\reexplanation{%
+    Generates strings in $a^* b^*$ of length $|w| \ge 2$, partitioned into strings with at least two $a$'s, strings with exactly one $a$ and at least one $b$, or strings with zero $a$'s and at least two $b$'s.
+}
+
+% =========================================================
+% EJERCICIO 15
+% =========================================================
+
+\section*{Exercise 15}
+\exercisedescription{%
+    The set of strings over $\{a,b\}$ that contain the substring $aa$ and the substring $bb$.
+}
+\reexpression{%
+    (a \mid b)^* aa (a \mid b)^* bb (a \mid b)^* \;\mid\; (a \mid b)^* bb (a \mid b)^* aa (a \mid b)^*
+}
+\reexplanation{%
+    Since $aa$ and $bb$ cannot overlap, they must appear in either order: $aa$ preceding $bb$, or $bb$ preceding $aa$.
+}
+\newpage
+
+% =========================================================
+% EJERCICIO 16
+% =========================================================
+
+\section*{Exercise 16}
+\exercisedescription{%
+    The set of strings over $\{a,b\}$ in which the substring $aa$ occurs at least twice. Hint: Beware of the substring $aaa$.
+}
+\reexpression{%
+    (a \mid b)^* aa (a \mid b)^* aa (a \mid b)^* \;\mid\; (a \mid b)^* aaa (a \mid b)^*
+}
+\reexplanation{%
+    Covers both disjoint occurrences of $aa$ (the first term) and overlapping occurrences within the substring $aaa$, where $aa$ occurs at indices $1$--$2$ and $2$--$3$.
+}
+
+% =========================================================
+% EJERCICIO 17
+% =========================================================
+
+\section*{Exercise 17}
+\exercisedescription{%
+    The set of strings over $\{a,b,c\}$ that do not contain the substring $aa$.
+}
+\reexpression{%
+    (b \mid c)^* \big(a (b \mid c)(b \mid c)^*\big)^* (a \mid \varepsilon)
+}
+\reexplanation{%
+    Any occurrence of $a$ must be followed immediately by at least one non-$a$ character (either $b$ or $c$), except possibly for a single trailing $a$ at the end of the string.
+}
+
+% =========================================================
+% EJERCICIO 18
+% =========================================================
+
+\section*{Exercise 18}
+\exercisedescription{%
+    The set of strings over $\{a,b\}$ that do not begin with the substring $aaa$.
+}
+\reexpression{%
+    \varepsilon \mid a \mid aa \mid (b \mid ab \mid aab)(a \mid b)^*
+}
+\reexplanation{%
+    A string does not begin with $aaa$ if its prefix of length up to 3 is not $aaa$. Strings of length $< 3$ are $\varepsilon, a, aa$, while longer strings must begin with $b$, $ab$, or $aab$, followed by any arbitrary suffix.
+}
+
+% =========================================================
+% EJERCICIO 19
+% =========================================================
+
+\section*{Exercise 19}
+\exercisedescription{%
+    The set of strings over $\{a,b\}$ that do not contain the substring $aaa$.
+}
+\reexpression{%
+    (b \mid ab \mid aab)^* (\varepsilon \mid a \mid aa)
+}
+\reexplanation{%
+    Blocks of $a$'s between $b$'s can have length at most two. Every non-trailing block of $a$'s is terminated by a $b$, and the string may end with zero, one, or two $a$'s.
+}
+\newpage
+
+% =========================================================
+% EJERCICIO 20
+% =========================================================
+
+\section*{Exercise 20}
+\exercisedescription{%
+    The set of strings over $\{a,b\}$ that do not contain the substring $aba$.
+}
+\reexpression{%
+    b^* a^* (b b b^* a a^*)^* b^*
+}
+\reexplanation{%
+    To avoid $aba$, any transition from an $a$ to a subsequent $a$ via $b$'s must contain at least two consecutive $b$'s ($b b b^*$). A single isolated $b$ can only appear at the very end of the string or before any $a$'s.
+}
+
+% =========================================================
+% EJERCICIO 21
+% =========================================================
+
+\section*{Exercise 21}
+\exercisedescription{%
+    The set of strings over $\{a,b\}$ in which the substring $aa$ occurs exactly once.
+}
+\reexpression{%
+    (b \mid ab)^* aa (b \mid ba)^*
+}
+\reexplanation{%
+    The unique occurrence of $aa$ is placed in the center. The prefix $(b \mid ab)^*$ ensures that no two $a$'s are adjacent and ends with $b$ (or is empty), preventing $aaa$. Symmetrically, $(b \mid ba)^*$ ensures no two $a$'s are adjacent to the right and begins with $b$ (or is empty).
+}
+
+% =========================================================
+% EJERCICIO 22
+% =========================================================
+
+\section*{Exercise 22}
+\exercisedescription{%
+    The set of strings over $\{a,b,c\}$ that begin with $a$, contain exactly two $b$'s, and end with $cc$.
+}
+\reexpression{%
+    a (a \mid c)^* b (a \mid c)^* b (a \mid c)^* cc
+}
+\reexplanation{%
+    Enforces the initial $a$, separates the exactly two $b$'s with arbitrary characters from $\{a, c\}$, and terminates with the suffix $cc$.
+}
+
+% =========================================================
+% EJERCICIO 23
+% =========================================================
+
+\section*{Exercise 23}
+\exercisedescription{%
+    The set of strings over $\{a,b\}$ that contain the substring $ab$ and the substring $ba$.
+}
+\reexpression{%
+    (a \mid b)^* \big(ab (a \mid b)^* ba \;\mid\; ba (a \mid b)^* ab \;\mid\; aba \;\mid\; bab\big) (a \mid b)^*
+}
+\reexplanation{%
+    Accounts for both non-overlapping occurrences ($ab \dots ba$ or $ba \dots ab$) as well as overlapping occurrences in the single substrings $aba$ and $bab$.
+}
+\newpage
+
+% =========================================================
+% EJERCICIO 24
+% =========================================================
+
+\section*{Exercise 24}
+\exercisedescription{%
+    The set of strings over $\{a,b,c\}$ that contain the substrings $aa$, $bb$, and $cc$.
+}
+\reexpression{%
+    \begin{aligned}
+        \Sigma^* \big( & aa \Sigma^* bb \Sigma^* cc \;\mid\; aa \Sigma^* cc \Sigma^* bb \;\mid\; \\
+                       & bb \Sigma^* aa \Sigma^* cc \;\mid\; bb \Sigma^* cc \Sigma^* aa \;\mid\; \\
+                       & cc \Sigma^* aa \Sigma^* bb \;\mid\; cc \Sigma^* bb \Sigma^* aa \big) \Sigma^*
+    \end{aligned}
+}
+\reexplanation{%
+    Where $\Sigma = (a \mid b \mid c)$. Because $aa$, $bb$, and $cc$ pairwise cannot overlap, they must appear in one of the $3! = 6$ possible permutations.
+}
+
+% =========================================================
+% EJERCICIO 25
+% =========================================================
+
+\section*{Exercise 25}
+\exercisedescription{%
+    The set of strings over $\{a,b,c\}$ in which every $b$ is immediately followed by at least one $c$.
+}
+\reexpression{%
+    (a \mid c \mid bc)^*
+}
+\reexplanation{%
+    Every occurrence of $b$ is introduced as part of the block $bc$, ensuring it is immediately followed by a $c$, while $a$ and $c$ can occur arbitrarily.
+}
+
+% =========================================================
+% EJERCICIO 26
+% =========================================================
+
+\section*{Exercise 26}
+\exercisedescription{%
+    The set of strings over $\{a,b,c\}$ with length three.
+}
+\reexpression{%
+    (a \mid b \mid c)(a \mid b \mid c)(a \mid b \mid c)
+}
+\reexplanation{%
+    Matches any 3-tuple of symbols chosen from the alphabet $\{a, b, c\}$.
+}
+
+% =========================================================
+% EJERCICIO 27
+% =========================================================
+
+\section*{Exercise 27}
+\exercisedescription{%
+    The set of strings over $\{a,b,c\}$ with length less than three.
+}
+\reexpression{%
+    \varepsilon \mid (a \mid b \mid c) \mid (a \mid b \mid c)(a \mid b \mid c)
+}
+\reexplanation{%
+    Explicit union over strings of lengths $0$, $1$, and $2$.
+}
+\newpage
+
+% =========================================================
+% EJERCICIO 28
+% =========================================================
+
+\section*{Exercise 28}
+\exercisedescription{%
+    The set of strings over $\{a,b,c\}$ with length greater than three.
+}
+\reexpression{%
+    (a \mid b \mid c)(a \mid b \mid c)(a \mid b \mid c)(a \mid b \mid c)(a \mid b \mid c)^*
+}
+\reexplanation{%
+    Requires at least four characters, followed by any arbitrary number of symbols.
+}
+
+% =========================================================
+% EJERCICIO 29
+% =========================================================
+
+\section*{Exercise 29}
+\exercisedescription{%
+    The set of strings over $\{a,b\}$ in which the number of $a$'s is divisible by three.
+}
+\reexpression{%
+    b^* (a b^* a b^* a b^*)^*
+}
+\reexplanation{%
+    Every cycle in the repetition contains exactly three $a$'s, with an arbitrary number of $b$'s interleaved between them.
+}
+
+% =========================================================
+% EJERCICIO 30
+% =========================================================
+
+\section*{Exercise 30}
+\exercisedescription{%
+    The set of strings over $\{a,b,c\}$ in which the total number of $b$'s and $c$'s is three.
+}
+\reexpression{%
+    a^* (b \mid c) a^* (b \mid c) a^* (b \mid c) a^*
+}
+\reexplanation{%
+    Matches exactly three occurrences of elements from $\{b, c\}$, interspersed with arbitrarily many $a$'s.
+}
+
+% =========================================================
+% EJERCICIO 31
+% =========================================================
+
+\section*{Exercise 31}
+\exercisedescription{%
+    The set of strings over $\{a,b\}$ in which every $a$ is either immediately preceded or immediately followed by $b$, for example, $baab$, $aba$, and $b$.
+}
+\reexpression{%
+    (aba \mid ab \mid ba \mid b)^*
+}
+\reexplanation{%
+    Any occurrence of $a$ is guarded by an adjacent $b$ on at least one side. The building blocks prevent isolated $a$'s or blocks of three or more consecutive $a$'s ($aaa$), while allowing valid clusters like $baab$ (via $ba \cdot ab$) and $aba$.
+}
+\newpage
+
+% =========================================================
+% EJERCICIO 32
+% =========================================================
+
+\section*{Exercise 32}
+\exercisedescription{%
+    The set of strings of odd length over $\{a,b\}$ that contain the substring $bb$.
+}
+\reexpression{%
+    \Sigma_{\text{even}}^* \Sigma bb \Sigma_{\text{even}}^* \;\mid\; \Sigma_{\text{even}}^* bb \Sigma \Sigma_{\text{even}}^*
+}
+\reexplanation{%
+    Where $\Sigma = (a \mid b)$ and $\Sigma_{\text{even}} = (a \mid b)(a \mid b)$. For a string $w = u \cdot bb \cdot v$ to have odd length, $|u| + |v| + 2$ must be odd, which implies $|u| + |v|$ is odd. Thus, either $|u|$ is odd and $|v|$ is even, or $|u|$ is even and $|v|$ is odd.
+}
+
+% =========================================================
+% EJERCICIO 33
+% =========================================================
+
+\section*{Exercise 33}
+\exercisedescription{%
+    The set of strings of even length over $\{a,b,c\}$ that contain exactly one $a$.
+}
+\reexpression{%
+    \Gamma_{\text{even}}^* \big(a (b \mid c) \mid (b \mid c) a\big) \Gamma_{\text{even}}^*
+}
+\reexplanation{%
+    Where $\Gamma_{\text{even}} = (b \mid c)(b \mid c)$. A string $w = u \cdot a \cdot v$ with $u, v \in \{b, c\}^*$ has even length if and only if $|u| + |v|$ is odd. Therefore, the single $a$ pairs with an adjacent symbol from $\{b, c\}$ as $a(b \mid c)$ or $(b \mid c)a$, surrounded by even-length strings over $\{b, c\}$.
+}
+
+% =========================================================
+% EJERCICIO 34
+% =========================================================
+
+\section*{Exercise 34}
+\exercisedescription{%
+    The set of strings over $\{a,b,c\}$ with an odd number of occurrences of the substring $ab$.
+}
+\reexpression{%
+    (b \mid a^* c)^* a a^* b (b \mid a^* c)^* \Big( (b \mid a^* c)^* a a^* b (b \mid a^* c)^* a a^* b \Big)^* a^*
+}
+\reexplanation{%
+    An occurrence of $ab$ is produced whenever an $a$-block is immediately closed by $b$ ($a a^* b$). Non-matching segments between them are generated by $(b \mid a^* c)^*$. The expression selects an initial $ab$ followed by an even number of additional $ab$ occurrences (pairs), ending in optional trailing $a$'s.
+}
+\newpage
+
+% =========================================================
+% EJERCICIO 35
+% =========================================================
+
+\section*{Exercise 35}
+\exercisedescription{%
+    The set of strings of odd length over $\{a,b\}$ that contain exactly two $b$'s.
+}
+\reexpression{%
+    \begin{aligned}
+        & (aa)^* b (aa)^* a (aa)^* b (aa)^* \;\mid\; \\
+        & a (aa)^* b (aa)^* b (aa)^* \;\mid\; \\
+        & (aa)^* b (aa)^* b (aa)^* a (aa)^* \;\mid\; \\
+        & a (aa)^* b a (aa)^* b a (aa)^*
+    \end{aligned}
+}
+\reexplanation{%
+    Strings have the form $a^i b a^j b a^k$ with length $i + j + k + 2$. The total length is odd if and only if $i + j + k$ is odd. This holds if exactly one of $\{i, j, k\}$ is odd (the first three lines) or all three are odd (the fourth line).
+}
+
+% =========================================================
+% EJERCICIO 36
+% =========================================================
+
+\section*{Exercise 36}
+\exercisedescription{%
+    The set of strings over $\{a,b\}$ with an even number of $a$'s or an odd number of $b$'s.
+}
+\reexpression{%
+    b^* (a b^* a b^*)^* \;\mid\; a^* b a^* (b a^* b a^*)^*
+}
+\reexplanation{%
+    Union of two languages: the first term generates strings with an even number of $a$'s ($2k$ occurrences of $a$ interspersed with $b$'s), and the second term generates strings with an odd number of $b$'s ($2k+1$ occurrences of $b$ interspersed with $a$'s).
+}
+
+\end{document}
