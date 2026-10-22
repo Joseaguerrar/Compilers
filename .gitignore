@@ -1,14 +1,38 @@
+# Objetos y librerías compiladas
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+
+# Carpetas de construcción y binarios generales
+build/
+bin/
+obj/
+
+# Archivos generados por Flex
+*.lex.c
+*.lex.h
+lex.yy.c
+lex.yy.h
+
+# Archivos generados por Bison
+*.bison.c
+*.bison.h
+*.tab.c
+*.tab.h
+*.output
+
 # MicroCompiler
 MicroCompiler/microc
 MicroCompiler/program_mostro_binary
 MicroCompiler/tests/*.s
 MicroCompiler/obj
 
-# Scanner (archivos generados por Flex, objetos y binarios)
-Scanner/src/lex.yy.c
-Scanner/src/*.lex.c
-Scanner/src/*.o
+# Scanner
 Scanner/src/preprocessor
+Scanner/src/test_scanner
+Scanner/scanner
 Scanner/presentation/*.aux
 Scanner/presentation/*.log
 Scanner/presentation/*.nav
@@ -19,7 +43,15 @@ Scanner/presentation/*.vrb
 Scanner/presentation/*.pdf
 Scanner/presentation/*.tex
 
-# binarios, código autogenerado de flex y objetos de Scanner
-Scanner/bin
-Scanner/build
-Scanner/src/test_scanner
+# Parser
+Parser/bin/
+Parser/build/
+
+# Archivos temporales y respaldos
+*.tmp
+*~
+*.swp
+*.swo
+.DS_Store
+.vscode/
+.idea/
