@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include "preprocessor.h"
 
@@ -28,6 +29,9 @@ int main(int argc, char *argv[]) {
 
     int syntax_errors = 0;
     int ok = parse_file(temp_filename, &syntax_errors);
+
+    /* Delete the temp file to free memory */
+    unlink(temp_filename);
 
     printf("Errores léxicos de preproceso: %d\n", lexical_errors);
     printf("Errores de preprocesador: %d\n", preprocessor_errors);
