@@ -2,20 +2,21 @@
 
 CC = gcc
 BISON = bison
+FLEX = flex
 
-CFLAGS = -Wall -Wextra -g -I../Scanner/include
+CFLAGS = -Wall -Wextra -g -Iinclude
 
 BUILD_DIR = build
 BIN_DIR = bin
 
 TARGET = $(BIN_DIR)/parser
 
-SCANNER_DIR = ../Scanner
-SCANNER_BUILD = $(SCANNER_DIR)/build
-SCANNER_OBJS = \
-	$(SCANNER_BUILD)/preprocessor.o \
-	$(SCANNER_BUILD)/scanner.lex.o \
-	$(SCANNER_BUILD)/scanner_api.o
+OBJS = \
+	$(BUILD_DIR)/main.o \
+	$(BUILD_DIR)/parser.o \
+	$(BUILD_DIR)/preprocessor.o \
+	$(BUILD_DIR)/scanner.o \
+	$(BUILD_DIR)/scanner_api.o
 
 all: directories $(TARGET)
 
@@ -23,19 +24,37 @@ directories:
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(BIN_DIR)
 
+# Flex: Preprocesador
+$(BUILD_DIR)/preprocessor.lex.c: src/preprocessor.l | directories
+	$(FLEX) -o $@ $<
+
+$(BUILD_DIR)/preprocessor.o: $(BUILD_DIR)/preprocessor.lex.c include/preprocessor.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Flex: Scanner
+$(BUILD_DIR)/scanner.lex.c: src/scanner.l | directories
+	$(FLEX) -o $@ $<
+
+$(BUILD_DIR)/scanner.o: $(BUILD_DIR)/scanner.lex.c include/token.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Scanner API
+$(BUILD_DIR)/scanner_api.o: src/scanner_api.c include/token.h | directories
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Bison: Parser
 $(BUILD_DIR)/parser.bison.c: src/parser.y | directories
 	$(BISON) -o $@ $<
 
-$(BUILD_DIR)/parser.o: $(BUILD_DIR)/parser.bison.c
-	$(CC) $(CFLAGS) -c $(BUILD_DIR)/parser.bison.c -o $@
-
-$(BUILD_DIR)/main.o: src/main.c ../Scanner/include/preprocessor.h | directories
+$(BUILD_DIR)/parser.o: $(BUILD_DIR)/parser.bison.c include/token.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(SCANNER_OBJS): FORCE
-	$(MAKE) -C $(SCANNER_DIR)/src $(patsubst $(SCANNER_BUILD)/%,../build/%,$@)
+# Main
+$(BUILD_DIR)/main.o: src/main.c include/preprocessor.h | directories
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(TARGET): $(BUILD_DIR)/main.o $(BUILD_DIR)/parser.o $(SCANNER_OBJS)
+# Ejecutable final
+$(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@
 
 clean:
@@ -44,4 +63,4 @@ clean:
 
 rebuild: clean all
 
-.PHONY: all directories clean rebuild FORCE
+.PHONY: all directories clean rebuild
