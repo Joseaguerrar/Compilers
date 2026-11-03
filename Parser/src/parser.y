@@ -27,17 +27,15 @@ static int yylex(void);
 static void yyerror(const char *msg);
 
 static int syntax_error_count = 0;
-static int definitive_error = 1;
-
 %}
 
 %define api.token.prefix {T_}
 
 %union {
     long long ival; /* TOK_INT_CONST */
-    double fval; /* TOK_FLOAT_CONST */
-    char cval; /* TOK_CHAR_CONST */
-    char *sval; /* TOK_IDENTIFIER, TOK_STRING_LITERAL */
+    double fval;    /* TOK_FLOAT_CONST */
+    char cval;      /* TOK_CHAR_CONST */
+    char *sval;     /* TOK_IDENTIFIER, TOK_STRING_LITERAL */
 }
 
 /* Keywords */
@@ -98,14 +96,52 @@ param:
 static int yylex(void) {
     Token t = Get_Token();
 
+    if (t.code == TOK_EOF) {
+        if (t.lexeme) {
+            free(t.lexeme);
+        }
+        return 0;
+    }
+
+    int bison_token = T_ERROR;
+
     switch (t.code) {
-        case TOK_EOF: return 0;
-#define X(n) case TOK_##n: return T_##n;
-        TOKEN_LIST(X)
+        case TOK_IDENTIFIER:
+        case TOK_STRING_LITERAL:
+            yylval.sval = t.lexeme;
+            return (t.code == TOK_IDENTIFIER) ? T_IDENTIFIER : T_STRING_LITERAL;
+
+        case TOK_INT_CONST:
+            yylval.ival = strtoll(t.lexeme, NULL, 0);
+            free(t.lexeme);
+            return T_INT_CONST;
+
+        case TOK_FLOAT_CONST:
+            yylval.fval = strtod(t.lexeme, NULL);
+            free(t.lexeme);
+            return T_FLOAT_CONST;
+
+        case TOK_CHAR_CONST:
+            yylval.cval = (t.lexeme && t.lexeme[1]) ? t.lexeme[1] : '\0';
+            free(t.lexeme);
+            return T_CHAR_CONST;
+
+        default:
+            /* Liberar el lexema para operadores, palabras reservadas y puntuadores */
+            if (t.lexeme) {
+                free(t.lexeme);
+            }
+
+            switch (t.code) {
+#define X(n) case TOK_##n: bison_token = T_##n; break;
+                TOKEN_LIST(X)
 #undef X
-        default: return T_ERROR;
+                default: bison_token = T_ERROR; break;
+            }
+            return bison_token;
     }
 }
+
 
 static void yyerror(const char *msg) {
     syntax_error_count++;

@@ -4,8 +4,7 @@
 #include <unistd.h>
 
 #include "preprocessor.h"
-
-int parse_file(const char *input_filename, int *syntax_errors);
+#include "parser.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -13,6 +12,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    // Preprocess the file
     char temp_filename[PATH_MAX];
     int lexical_errors = 0;
     int preprocessor_errors = 0;
@@ -27,10 +27,11 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    // Parse the file
     int syntax_errors = 0;
     int ok = parse_file(temp_filename, &syntax_errors);
 
-    /* Delete the temp file to free memory */
+    // Delete the temp file to free memory
     unlink(temp_filename);
 
     printf("Errores léxicos de preproceso: %d\n", lexical_errors);
