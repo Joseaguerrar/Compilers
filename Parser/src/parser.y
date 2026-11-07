@@ -27,6 +27,38 @@ static int yylex(void);
 static void yyerror(const char *msg);
 
 static int syntax_error_count = 0;
+
+/* Tabla de alias creados con typedef (nombres de tipo definidos por el usuario) */
+static char **alias_names = NULL;
+static int alias_count = 0;
+static int alias_cap = 0;
+static int declaring_alias = 0;  /* 1 mientras la declaracion actual lleva typedef */
+static int inner_depth = 0;      /* > 0 dentro de parametros de funcion o de llaves de struct/union */
+
+static int alias_known(const char *name) {
+    for (int i = 0; i < alias_count; i++)
+        if (strcmp(alias_names[i], name) == 0) return 1;
+    return 0;
+}
+
+static void alias_register(const char *name) {
+    if (alias_known(name)) return;
+    if (alias_count == alias_cap) {
+        alias_cap = alias_cap ? alias_cap * 2 : 16;
+        alias_names = realloc(alias_names, alias_cap * sizeof(char *));
+        if (!alias_names) { perror("realloc"); exit(1); }
+    }
+    alias_names[alias_count++] = strdup(name);
+}
+
+static void alias_reset(void) {
+    for (int i = 0; i < alias_count; i++) free(alias_names[i]);
+    free(alias_names);
+    alias_names = NULL;
+    alias_count = alias_cap = 0;
+    declaring_alias = 0;
+    inner_depth = 0;
+}
 %}
 
 %define api.token.prefix {T_}
@@ -50,7 +82,7 @@ static int syntax_error_count = 0;
 %token STATIC_ASSERT THREAD_LOCAL
 
 /* Identifiers and constants */
-%token <sval> IDENTIFIER STRING_LITERAL
+%token <sval> IDENTIFIER USER_TYPE STRING_LITERAL
 %token <ival> INT_CONST
 %token <fval> FLOAT_CONST
 %token <cval> CHAR_CONST
@@ -129,21 +161,28 @@ unary_expression:
       postfix_expression
     | INCREMENT unary_expression
     | DECREMENT unary_expression
-    | PLUS unary_expression
-    | MINUS unary_expression
-    | NOT unary_expression
-    | BIT_NOT unary_expression
-    | STAR unary_expression
-    | BIT_AND unary_expression
+    | PLUS cast_expr
+    | MINUS cast_expr
+    | NOT cast_expr
+    | BIT_NOT cast_expr
+    | STAR cast_expr
+    | BIT_AND cast_expr
     | SIZEOF unary_expression
+    | SIZEOF LPAREN type_label RPAREN
+    ;
+
+/* Conversion explicita de tipo: (tipo) expresion */
+cast_expr:
+      unary_expression
+    | LPAREN type_label RPAREN cast_expr
     ;
 
 /* Multiplicación, división y módulo */
 multiplicative_expression:
-      unary_expression
-    | multiplicative_expression STAR unary_expression
-    | multiplicative_expression SLASH unary_expression
-    | multiplicative_expression PERCENT unary_expression
+      cast_expr
+    | multiplicative_expression STAR cast_expr
+    | multiplicative_expression SLASH cast_expr
+    | multiplicative_expression PERCENT cast_expr
     ;
 
 /* Suma y resta */
@@ -253,6 +292,77 @@ type_specifier:
     | UNSIGNED
     | BOOL
     | COMPLEX
+    | record_spec
+    | enum_spec
+    ;
+
+/* struct y union */
+record_spec:
+      record_kind IDENTIFIER LBRACE { inner_depth++; } member_list RBRACE
+          { inner_depth--; free($2); }
+    | record_kind LBRACE { inner_depth++; } member_list RBRACE
+          { inner_depth--; }
+    | record_kind IDENTIFIER { free($2); }
+    ;
+
+record_kind:
+      STRUCT
+    | UNION
+    ;
+
+/* Miembros del registro */
+member_list:
+      member_decl
+    | member_list member_decl
+    ;
+
+member_decl:
+      member_specs member_declarator_list SEMICOLON
+    | member_specs SEMICOLON
+    ;
+
+/* Tipo de un miembro (sin clases de almacenamiento) */
+member_specs:
+      type_specifier
+    | user_type_ref
+    | type_qualifier
+    | type_specifier member_specs
+    | user_type_ref member_specs
+    | type_qualifier member_specs
+    ;
+
+member_declarator_list:
+      member_declarator
+    | member_declarator_list COMMA member_declarator
+    ;
+
+/* Miembro normal o campo de bits */
+member_declarator:
+      declarator
+    | declarator COLON conditional_expression
+    | COLON conditional_expression
+    ;
+
+/* enum */
+enum_spec:
+      ENUM IDENTIFIER LBRACE enum_item_list enum_comma_opt RBRACE { free($2); }
+    | ENUM LBRACE enum_item_list enum_comma_opt RBRACE
+    | ENUM IDENTIFIER { free($2); }
+    ;
+
+enum_comma_opt:
+      %empty
+    | COMMA
+    ;
+
+enum_item_list:
+      enum_item
+    | enum_item_list COMMA enum_item
+    ;
+
+enum_item:
+      IDENTIFIER { free($1); }
+    | IDENTIFIER ASSIGN conditional_expression { free($1); }
     ;
 
 /* Calificadores de tipo */
@@ -262,17 +372,44 @@ type_qualifier:
     | RESTRICT
     ;
 
+/* Nombre de tipo creado por el usuario con typedef */
+user_type_ref:
+      USER_TYPE { free($1); }
+    ;
+
+/* Palabra clave typedef: marca la declaracion como definicion de alias */
+alias_keyword:
+      TYPEDEF { declaring_alias = 1; }
+    ;
+
+/* Clases de almacenamiento y especificadores de funcion (sin typedef) */
+storage_word:
+      STATIC
+    | EXTERN
+    | AUTO
+    | REGISTER
+    | THREAD_LOCAL
+    | INLINE
+    | NORETURN
+    ;
+
 /* Especificadores de una declaracion */
 declaration_specifiers:
       type_specifier
+    | user_type_ref
     | type_qualifier declaration_specifiers
+    | alias_keyword declaration_specifiers
+    | storage_word declaration_specifiers
     | type_specifier declaration_specifiers
+    | user_type_ref declaration_specifiers
     ;
 
 /* Declaraciones */
 declaration:
       declaration_specifiers SEMICOLON
+          { declaring_alias = 0; }
     | declaration_specifiers init_declarator_list SEMICOLON
+          { declaring_alias = 0; }
     ;
 
 /* Lista de variables declaradas */
@@ -287,15 +424,39 @@ init_declarator:
     | declarator ASSIGN initializer
     ;
 
-/* Inicializador simple */
+/* Inicializador: expresion o lista entre llaves */
 initializer:
       assignment_expression
+    | LBRACE init_item_list RBRACE
+    | LBRACE init_item_list COMMA RBRACE
+    ;
+
+init_item_list:
+      init_item
+    | init_item_list COMMA init_item
+    ;
+
+/* Elemento de la lista, con designador opcional: .campo = v, [i] = v */
+init_item:
+      initializer
+    | designator_chain ASSIGN initializer
+    ;
+
+designator_chain:
+      designator_step
+    | designator_chain designator_step
+    ;
+
+designator_step:
+      LBRACKET conditional_expression RBRACKET
+    | DOT IDENTIFIER { free($2); }
     ;
 
 
 /* Declarador */
 declarator:
-      pointer_opt direct_declarator
+      direct_declarator
+    | STAR pointer_opt direct_declarator
     ;
 
 /* Punteros */
@@ -307,10 +468,15 @@ pointer_opt:
 
 /* Declaradores directos */
 direct_declarator:
-      IDENTIFIER { free($1); }
+      IDENTIFIER
+          {
+              if (declaring_alias && inner_depth == 0) alias_register($1);
+              free($1);
+          }
     | LPAREN declarator RPAREN
     | direct_declarator LBRACKET array_size_opt RBRACKET
-    | direct_declarator LPAREN parameter_type_list_opt RPAREN
+    | direct_declarator LPAREN { inner_depth++; }
+      parameter_type_list_opt RPAREN { inner_depth--; }
     ;
 
 /* Parametros opcionales de una funcion */
@@ -329,7 +495,29 @@ parameter_list:
 /* Declaracion de cada parametro */
 parameter_declaration:
       declaration_specifiers declarator
+    | declaration_specifiers nameless_declarator
     | declaration_specifiers
+    ;
+
+/* Tipo completo sin nombre: usado en casts, sizeof y parametros anonimos */
+type_label:
+      member_specs
+    | member_specs nameless_declarator
+    ;
+
+/* Declarador sin identificador */
+nameless_declarator:
+      STAR pointer_opt
+    | STAR pointer_opt nameless_direct
+    | nameless_direct
+    ;
+
+nameless_direct:
+      LPAREN nameless_declarator RPAREN
+    | LBRACKET array_size_opt RBRACKET
+    | nameless_direct LBRACKET array_size_opt RBRACKET
+    | LPAREN parameter_type_list_opt RPAREN
+    | nameless_direct LPAREN parameter_type_list_opt RPAREN
     ;
 
 /* Tamano de arreglo opcional */
@@ -435,9 +623,12 @@ static int yylex(void) {
 
     switch (t.code) {
         case TOK_IDENTIFIER:
+            yylval.sval = t.lexeme;
+            return (t.lexeme && alias_known(t.lexeme)) ? T_USER_TYPE : T_IDENTIFIER;
+
         case TOK_STRING_LITERAL:
             yylval.sval = t.lexeme;
-            return (t.code == TOK_IDENTIFIER) ? T_IDENTIFIER : T_STRING_LITERAL;
+            return T_STRING_LITERAL;
 
         case TOK_INT_CONST:
             yylval.ival = strtoll(t.lexeme, NULL, 0);
@@ -492,9 +683,11 @@ int parse_file(
     }
 
     syntax_error_count = 0;
+    alias_reset();
 
     yyparse();
     close_scanner();
+    alias_reset();
 
     if (syntax_errors) *syntax_errors = syntax_error_count;
 
