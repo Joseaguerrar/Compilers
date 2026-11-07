@@ -75,21 +75,156 @@ static int syntax_error_count = 0;
 
 %%
 
-root:   /* empty */
-        | expr root
-        ;
+/* Gramática de prueba para expresiones.
+   Todavía NO reconoce programas C completos. */
 
-datatype:
-        PLUS
-        ;
+root:
+      %empty
+    | root expression SEMICOLON
+    ;
 
-expr:
-        datatype IDENTIFIER LBRACKET param RBRACKET SEMICOLON
+/* Expresiones primarias */
+primary_expression:
+      IDENTIFIER       { free($1); }
+    | INT_CONST
+    | FLOAT_CONST
+    | CHAR_CONST
+    | STRING_LITERAL   { free($1); }
+    | LPAREN expression RPAREN
+    ;
 
-param:
-        datatype IDENTIFIER COMMA param
-        | datatype IDENTIFIER
+/* Expresiones postfijas */
+postfix_expression:
+      primary_expression
+    | postfix_expression LBRACKET expression RBRACKET
+    | postfix_expression LPAREN RPAREN
+    | postfix_expression LPAREN argument_list RPAREN
+    | postfix_expression DOT IDENTIFIER { free($3); }
+    | postfix_expression ARROW IDENTIFIER { free($3); }
+    | postfix_expression INCREMENT
+    | postfix_expression DECREMENT
+    ;
 
+/* Argumentos de función */
+argument_list:
+      assignment_expression
+    | argument_list COMMA assignment_expression
+    ;
+
+/* Expresiones unarias */
+unary_expression:
+      postfix_expression
+    | INCREMENT unary_expression
+    | DECREMENT unary_expression
+    | PLUS unary_expression
+    | MINUS unary_expression
+    | NOT unary_expression
+    | BIT_NOT unary_expression
+    | STAR unary_expression
+    | BIT_AND unary_expression
+    | SIZEOF unary_expression
+    ;
+
+/* Multiplicación, división y módulo */
+multiplicative_expression:
+      unary_expression
+    | multiplicative_expression STAR unary_expression
+    | multiplicative_expression SLASH unary_expression
+    | multiplicative_expression PERCENT unary_expression
+    ;
+
+/* Suma y resta */
+additive_expression:
+      multiplicative_expression
+    | additive_expression PLUS multiplicative_expression
+    | additive_expression MINUS multiplicative_expression
+    ;
+
+/* Desplazamientos de bits */
+shift_expression:
+      additive_expression
+    | shift_expression LSHIFT additive_expression
+    | shift_expression RSHIFT additive_expression
+    ;
+
+/* Comparaciones relacionales */
+relational_expression:
+      shift_expression
+    | relational_expression LT shift_expression
+    | relational_expression GT shift_expression
+    | relational_expression LE shift_expression
+    | relational_expression GE shift_expression
+    ;
+
+/* Igualdad y desigualdad */
+equality_expression:
+      relational_expression
+    | equality_expression EQ relational_expression
+    | equality_expression NEQ relational_expression
+    ;
+
+/* AND a nivel de bits */
+and_expression:
+      equality_expression
+    | and_expression BIT_AND equality_expression
+    ;
+
+/* XOR a nivel de bits */
+exclusive_or_expression:
+      and_expression
+    | exclusive_or_expression BIT_XOR and_expression
+    ;
+
+/* OR a nivel de bits */
+inclusive_or_expression:
+      exclusive_or_expression
+    | inclusive_or_expression BIT_OR exclusive_or_expression
+    ;
+
+/* AND logico */
+logical_and_expression:
+      inclusive_or_expression
+    | logical_and_expression AND inclusive_or_expression
+    ;
+
+/* OR logico */
+logical_or_expression:
+      logical_and_expression
+    | logical_or_expression OR logical_and_expression
+    ;
+
+/* Operador condicional ternario */
+conditional_expression:
+      logical_or_expression
+    | logical_or_expression QUESTION expression COLON conditional_expression
+    ;
+
+/* Operadores de asignacion */
+assignment_operator:
+      ASSIGN
+    | PLUS_ASSIGN
+    | MINUS_ASSIGN
+    | STAR_ASSIGN
+    | SLASH_ASSIGN
+    | PERCENT_ASSIGN
+    | LSHIFT_ASSIGN
+    | RSHIFT_ASSIGN
+    | BIT_AND_ASSIGN
+    | BIT_XOR_ASSIGN
+    | BIT_OR_ASSIGN
+    ;
+
+/* Expresiones de asignacion */
+assignment_expression:
+      conditional_expression
+    | unary_expression assignment_operator assignment_expression
+    ;
+
+/* Entrada de expresión, por ahora */
+expression:
+      assignment_expression
+    | expression COMMA assignment_expression
+    ;
 
 %%
 
