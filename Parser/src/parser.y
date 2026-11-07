@@ -40,7 +40,7 @@ static int syntax_error_count = 0;
 
 /* Keywords */
 %token AUTO BREAK CASE CHAR CONST CONTINUE
-%token DEFAULT DO DOUBLE ELSE ENUM EXTERN
+%token DEFAULT DO DOUBLE ENUM EXTERN
 %token FLOAT FOR GOTO IF INT LONG
 %token REGISTER RETURN SHORT SIGNED SIZEOF
 %token STATIC STRUCT SWITCH TYPEDEF UNION
@@ -71,18 +71,30 @@ static int syntax_error_count = 0;
 
 %token ERROR
 
-%start root
+/*Declara ELSE y le da mayor precedencia que a la alternativa if sin else*/
+%precedence IF_WITHOUT_ELSE
+%precedence ELSE
+
+%start translation_unit
 
 %%
 
 /* Gramática de prueba para expresiones.
    Todavía NO reconoce programas C completos. */
 
-root:
-      %empty
-    | root expression SEMICOLON
-    | root declaration
+
+/* Programa completo */
+translation_unit:
+      external_declaration
+    | translation_unit external_declaration
     ;
+
+/* Elementos permitidos a nivel global */
+external_declaration:
+      declaration
+    | function_definition
+    ;
+
 
 /* Expresiones primarias */
 primary_expression:
@@ -292,17 +304,119 @@ pointer_opt:
     | STAR pointer_opt
     ;
 
+
 /* Declaradores directos */
 direct_declarator:
       IDENTIFIER { free($1); }
     | LPAREN declarator RPAREN
     | direct_declarator LBRACKET array_size_opt RBRACKET
+    | direct_declarator LPAREN parameter_type_list_opt RPAREN
+    ;
+
+/* Parametros opcionales de una funcion */
+parameter_type_list_opt:
+      %empty
+    | parameter_list
+    | parameter_list COMMA ELLIPSIS
+    ;
+
+/* Lista de parametros */
+parameter_list:
+      parameter_declaration
+    | parameter_list COMMA parameter_declaration
+    ;
+
+/* Declaracion de cada parametro */
+parameter_declaration:
+      declaration_specifiers declarator
+    | declaration_specifiers
     ;
 
 /* Tamano de arreglo opcional */
 array_size_opt:
       %empty
     | assignment_expression
+    ;
+
+
+/* Definicion de funciones */
+function_definition:
+      declaration_specifiers declarator compound_statement
+    ;
+
+/* Bloques delimitados por llaves */
+compound_statement:
+      LBRACE RBRACE
+    | LBRACE block_item_list RBRACE
+    ;
+
+/* Lista de elementos dentro de un bloque */
+block_item_list:
+      block_item
+    | block_item_list block_item
+    ;
+
+/* Un bloque puede contener declaraciones o sentencias */
+block_item:
+      declaration
+    | statement
+    ;
+
+/* Sentencias */
+statement:
+      labeled_statement
+    | compound_statement
+    | expression_statement
+    | selection_statement
+    | iteration_statement
+    | jump_statement
+    ;
+
+/* Sentencias de expresion */
+expression_statement:
+      SEMICOLON
+    | expression SEMICOLON
+    ;
+
+/* Sentencias etiquetadas */
+labeled_statement:
+      IDENTIFIER COLON statement { free($1); }
+    | CASE conditional_expression COLON statement
+    | DEFAULT COLON statement
+    ;
+
+
+/* Condicionales */
+selection_statement:
+      IF LPAREN expression RPAREN statement
+          %prec IF_WITHOUT_ELSE
+    | IF LPAREN expression RPAREN statement ELSE statement
+    | SWITCH LPAREN expression RPAREN statement
+    ;
+
+/* Ciclos */
+iteration_statement:
+      WHILE LPAREN expression RPAREN statement
+    | DO statement WHILE LPAREN expression RPAREN SEMICOLON
+    | FOR LPAREN expression_opt SEMICOLON expression_opt
+      SEMICOLON expression_opt RPAREN statement
+    | FOR LPAREN declaration expression_opt
+      SEMICOLON expression_opt RPAREN statement
+    ;
+
+/* Expresion opcional */
+expression_opt:
+      %empty
+    | expression
+    ;
+
+/* Sentencias de salto */
+jump_statement:
+      GOTO IDENTIFIER SEMICOLON { free($2); }
+    | CONTINUE SEMICOLON
+    | BREAK SEMICOLON
+    | RETURN SEMICOLON
+    | RETURN expression SEMICOLON
     ;
 
 %%
