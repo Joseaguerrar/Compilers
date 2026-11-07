@@ -81,6 +81,7 @@ static int syntax_error_count = 0;
 root:
       %empty
     | root expression SEMICOLON
+    | root declaration
     ;
 
 /* Expresiones primarias */
@@ -224,6 +225,84 @@ assignment_expression:
 expression:
       assignment_expression
     | expression COMMA assignment_expression
+    ;
+
+
+/* Tipos de datos basicos */
+type_specifier:
+      VOID
+    | CHAR
+    | SHORT
+    | INT
+    | LONG
+    | FLOAT
+    | DOUBLE
+    | SIGNED
+    | UNSIGNED
+    | BOOL
+    | COMPLEX
+    ;
+
+/* Calificadores de tipo */
+type_qualifier:
+      CONST
+    | VOLATILE
+    | RESTRICT
+    ;
+
+/* Especificadores de una declaracion */
+declaration_specifiers:
+      type_specifier
+    | type_qualifier declaration_specifiers
+    | type_specifier declaration_specifiers
+    ;
+
+/* Declaraciones */
+declaration:
+      declaration_specifiers SEMICOLON
+    | declaration_specifiers init_declarator_list SEMICOLON
+    ;
+
+/* Lista de variables declaradas */
+init_declarator_list:
+      init_declarator
+    | init_declarator_list COMMA init_declarator
+    ;
+
+/* Declarador con inicializacion opcional */
+init_declarator:
+      declarator
+    | declarator ASSIGN initializer
+    ;
+
+/* Inicializador simple */
+initializer:
+      assignment_expression
+    ;
+
+
+/* Declarador */
+declarator:
+      pointer_opt direct_declarator
+    ;
+
+/* Punteros */
+pointer_opt:
+      %empty
+    | STAR pointer_opt
+    ;
+
+/* Declaradores directos */
+direct_declarator:
+      IDENTIFIER { free($1); }
+    | LPAREN declarator RPAREN
+    | direct_declarator LBRACKET array_size_opt RBRACKET
+    ;
+
+/* Tamano de arreglo opcional */
+array_size_opt:
+      %empty
+    | assignment_expression
     ;
 
 %%
